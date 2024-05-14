@@ -1,39 +1,40 @@
+import torch
 from abc import ABC, abstractmethod
-
-import numpy as np
 from scipy.integrate import odeint
 
 
 class EpidemicModelBase(ABC):
     def __init__(self, model_data, compartments: list) -> None:
-        self.population = model_data.age_data.flatten()
+        self.population = torch.tensor(model_data.age_data.flatten(),
+                                       dtype=torch.float32)
         self.compartments = compartments
         self.c_idx = {comp: idx for idx, comp in enumerate(self.compartments)}
         self.n_age = self.population.shape[0]
 
     def initialize(self):
-        iv = {key: np.zeros(self.n_age) for key in self.compartments}
+        iv = {key: torch.zeros(self.n_age, dtype=torch.float32) for key in self.compartments}
         return iv
 
-    def aggregate_by_age(self, solution, idx) -> np.ndarray:
-        return np.sum(solution[:, idx * self.n_age:(idx + 1) * self.n_age], axis=1)
+    def aggregate_by_age(self, solution, idx) -> torch.Tensor:
+        return torch.sum(solution[:, idx * self.n_age:(idx + 1) * self.n_age], dim=1)
 
-    def get_cumulative(self, solution) -> np.ndarray:
+    def get_cumulative(self, solution) -> torch.Tensor:
         idx = self.c_idx["c"]
         return self.aggregate_by_age(solution, idx)
 
-    def get_deaths(self, solution) -> np.ndarray:
+    def get_deaths(self, solution) -> torch.Tensor:
         idx = self.c_idx["d"]
         return self.aggregate_by_age(solution, idx)
 
-    def get_solution(self, t: int, parameters: dict, cm: np.ndarray):
+    def get_solution(self, t: torch.Tensor, parameters: dict, cm: torch.Tensor):
         initial_values = self.get_initial_values()
-        return np.array(odeint(self.get_model, initial_values, t, args=(parameters, cm)))
+        return torch.tensor(odeint(self.get_model, initial_values, t,
+                                   args=(parameters, cm)), dtype=torch.float32)
 
-    def get_array_from_dict(self, comp_dict) -> np.ndarray:
-        return np.array([comp_dict[comp] for comp in self.compartments]).flatten()
+    def get_array_from_dict(self, comp_dict) -> torch.Tensor:
+        return torch.stack([comp_dict[comp] for comp in self.compartments])
 
-    def get_initial_values(self) -> np.ndarray:
+    def get_initial_values(self) -> torch.Tensor:
         iv = self.initialize()
         self.update_initial_values(iv=iv)
         return self.get_array_from_dict(comp_dict=iv)

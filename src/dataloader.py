@@ -1,18 +1,19 @@
 import json
 import os
-
-import numpy as np
+import torch
 import xlrd
-
 
 PROJECT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class DataLoader:
     def __init__(self):
-        self._model_parameters_data_file = os.path.join(PROJECT_PATH, "../data", "model_parameters.json")
-        self._contact_data_file = os.path.join(PROJECT_PATH, "../data", "contact_matrices.xls")
-        self._age_data_file = os.path.join(PROJECT_PATH, "../data", "age_distribution.xls")
+        self._model_parameters_data_file = os.path.join(PROJECT_PATH, "../data",
+                                                        "model_parameters.json")
+        self._contact_data_file = os.path.join(PROJECT_PATH, "../data",
+                                               "contact_matrices.xls")
+        self._age_data_file = os.path.join(PROJECT_PATH, "../data",
+                                           "age_distribution.xls")
 
         self._get_age_data()
         self._get_model_parameters_data()
@@ -21,7 +22,8 @@ class DataLoader:
     def _get_age_data(self):
         wb = xlrd.open_workbook(self._age_data_file)
         sheet = wb.sheet_by_index(0)
-        datalist = np.array([sheet.row_values(i) for i in range(0, sheet.nrows)])
+        datalist = torch.tensor([sheet.row_values(i) for i in range(0, sheet.nrows)],
+                                dtype=torch.float32)
         wb.unload_sheet(0)
         self.age_data = datalist
 
@@ -33,29 +35,31 @@ class DataLoader:
         for param in parameters.keys():
             param_value = parameters[param]["value"]
             if isinstance(param_value, list):
-                self.model_parameters_data.update({param: np.array(param_value)})
+                self.model_parameters_data[param] = torch.tensor(param_value,
+                                                                 dtype=torch.float32)
             else:
-                self.model_parameters_data.update({param: param_value})
+                self.model_parameters_data[param] = param_value
 
     def _get_contact_mtx(self):
         wb = xlrd.open_workbook(self._contact_data_file)
         contact_matrices = dict()
         for idx in range(4):
             sheet = wb.sheet_by_index(idx)
-            datalist = np.array([sheet.row_values(i) for i in range(0, sheet.nrows)])
+            datalist = torch.tensor([sheet.row_values(i) for i in range(0, sheet.nrows)],
+                                    dtype=torch.float32)
             cm_type = wb.sheet_names()[idx]
             wb.unload_sheet(0)
             datalist = self.transform_matrix(datalist)
-            contact_matrices.update({cm_type: datalist})
+            contact_matrices[cm_type] = datalist
         self.contact_data = contact_matrices
 
-    def transform_matrix(self, matrix: np.ndarray):
+    def transform_matrix(self, matrix: torch.Tensor):
         # Get age vector as a column vector
         age_distribution = self.age_data.reshape((-1, 1))   # (16, 1)
         # Get matrix of total number of contacts
         matrix_1 = matrix * age_distribution        # (16, 16)
         # Get symmetrized matrix
-        output = (matrix_1 + matrix_1.T) / 2
+        output = (matrix_1 + matrix_1.t()) / 2
         # Get contact matrix
         output /= age_distribution   # divides and assign the result to output    (16, 16)
         return output
