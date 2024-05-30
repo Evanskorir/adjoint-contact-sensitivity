@@ -43,6 +43,7 @@ class DataLoader:
     def _get_contact_mtx(self):
         wb = xlrd.open_workbook(self._contact_data_file)
         contact_matrices = dict()
+        flattened_vectors = dict()
         for idx in range(4):
             sheet = wb.sheet_by_index(idx)
             datalist = torch.tensor([sheet.row_values(i) for i in range(0, sheet.nrows)],
@@ -51,6 +52,20 @@ class DataLoader:
             wb.unload_sheet(0)
             datalist = self.transform_matrix(datalist)
             contact_matrices[cm_type] = datalist
+
+            # Get the upper triangle elements, including the diagonal
+            upper_tri_idx = torch.triu_indices(datalist.size(0), datalist.size(1),
+                                               offset=0)
+            upper_tri_elem = datalist[upper_tri_idx[0], upper_tri_idx[1]]
+            # Set requires_grad to True
+            upper_tri_elem.requires_grad = True
+            # Save upper triangle elements in the dictionary
+            flattened_vectors[cm_type] = upper_tri_elem
+
+            # Save the transformed flattened vectors
+        self.flattened_vector_dict = flattened_vectors
+
+        # Save the transformed matrices
         self.contact_data = contact_matrices
 
     def transform_matrix(self, matrix: torch.Tensor):
