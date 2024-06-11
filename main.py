@@ -6,7 +6,7 @@ from src.eigen_calculator import EigenCalculator
 def main():
     data = DataLoader()
     sim = SimulationBase(data=data)
-    ngm_small_tensor, ngm_small_grads = sim.r0.get_eig_val(contact_mtx=sim.contact_matrix,
+    ngm_small_tensor, ngm_small_grads = sim.r0.get_eig_val(contact_mtx=sim.symmetric_matrix,
                                                        population=sim.population,
                                                        susceptibles=sim.population)
     eig_calculator = EigenCalculator(ngm_small_tensor=ngm_small_tensor)

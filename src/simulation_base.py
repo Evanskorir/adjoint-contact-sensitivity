@@ -11,30 +11,32 @@ class SimulationBase:
 
         self.r0 = R0Generator(param=self.data.model_parameters_data, n_age=16)
 
-        self.upper_tri_elems = (
-                self.data.flattened_vector_dict["Home"] +
-                self.data.flattened_vector_dict["School"] +
-                self.data.flattened_vector_dict["Work"] +
-                self.data.flattened_vector_dict["Other"]
+        # get full contact matrix
+        self.full_contact_mtx = (
+                self.data.contact_data["Home"] +
+                self.data.contact_data["School"] +
+                self.data.contact_data["Work"] +
+                self.data.contact_data["Other"]
         )
-        Matr = MatrixOperations(n_age=16)
-        reconstructed_matrix = Matr.upper_triangle_to_matrix(
-            self.data.flattened_vector_dict)
 
-        # get matrix from upper tri elements
-        self.contact_matrix = (reconstructed_matrix["Home"] +
-                               reconstructed_matrix["School"] +
-                               reconstructed_matrix["Work"] +
-                               reconstructed_matrix["Other"]
-                               )
+        # get the total full contact matrix
+        self.total_contact_mtx = self.full_contact_mtx * \
+                                 self.data.age_data.reshape((-1, 1))
+
+        # get upper tri elements and symmetric matrix
+        Matr = MatrixOperations(n_age=16, pop=data.age_data)
+        self.symmetric_matrix, self.upper_tri_matrix = Matr.upper_triangle_to_matrix(
+            self.full_contact_mtx)
 
         self.params = self.data.model_parameters_data
         susceptibility = torch.ones(16)
         susceptibility[:4] = 0.5
 
         self.data.model_parameters_data.update({"susc": susceptibility})
-        self.n_ag = self.contact_matrix.shape[0]
+        self.n_ag = self.full_contact_mtx.shape[0]
         self.population = self.data.age_data
+
+
 
 
 
