@@ -2,46 +2,51 @@ import torch
 
 
 class MatrixOperations:
-    def __init__(self, n_age, pop: torch.Tensor):
-
+    def __init__(self, n_age: int, pop: torch.Tensor,
+                 transformed_contact_matrix: torch.Tensor):
+        """
+        Initialize the MatrixOperations class with the number of age groups,
+        population data, and contact matrix.
+        Args:
+            n_age (int): The number of age groups.
+            pop (torch.Tensor): A tensor representing the population data.
+            cm (torch.Tensor): The contact matrix.
+        """
         self.n_age = n_age
         self.pop = pop
+        self.transformed_contact_matrix = transformed_contact_matrix
 
-        self.upp_tri_elem = None
-        self.matrix = None
-        self.sym_cont_mtx = None
-
-    def upper_triangle_to_matrix(self, matrix: torch.Tensor):
-        # Get the upper triangle indices
+    def get_upper_triangular_elements(self) -> torch.Tensor:
+        """
+        Extract the upper triangular elements of the contact matrix and
+        create a symmetric matrix.
+        Returns: torch.Tensor: A tensor containing the symmetric matrix derived from the
+            upper triangular elements.
+        """
+        # Get the indices of the upper triangular part
         upper_tri_idx = torch.triu_indices(self.n_age, self.n_age, offset=0)
 
         # Extract the upper triangular elements and set requires_grad=True
-        upper_tri_elements = matrix[upper_tri_idx[0],
-                                    upper_tri_idx[1]].clone().detach().requires_grad_(True)
+        upper_tri_elements = self.transformed_contact_matrix[upper_tri_idx[0],
+                                                             upper_tri_idx[1]]
+        upper_tri_elements.requires_grad_(True)
 
-        # Fill the lower triangle with corresponding upper triangle values
-        matrix.T.tril_()[upper_tri_idx[0], upper_tri_idx[1]] = matrix[upper_tri_idx[0],
-                                                                      upper_tri_idx[1]]
+        # Create a new matrix filled with zeros
+        new_sym_contact_mtx = torch.zeros((self.n_age, self.n_age))
 
-        # Apply transformation to the matrix
-        matrix_transform = self.transform_matrix(matrix)
+        # Fill the upper triangular part with the extracted elements
+        new_sym_contact_mtx[upper_tri_idx[0], upper_tri_idx[1]] = upper_tri_elements
 
-        # Store the matrix and upper triangular elements
-        self.matrix = matrix_transform
-        self.upp_tri_elem = upper_tri_elements
+        # Transpose the new matrix
+        new_sym_contact_mtx_transposed = new_sym_contact_mtx.T
 
-        return self.matrix, self.upp_tri_elem
+        # Fill the lower triangular part using the upper triangular indices
+        new_sym_contact_mtx_transposed[upper_tri_idx[0],
+                                   upper_tri_idx[1]] = upper_tri_elements
+        # divide by the pop to get the full symmetrized cm
+        new_symmetric_matrix = new_sym_contact_mtx_transposed / self.pop
 
-    def transform_matrix(self, matrix: torch.Tensor):
-        # Get age vector as a column vector
-        age_distribution = self.pop.reshape((-1, 1))  # (16, 1)
-        # Get symmetric matrix
-        output = (matrix + matrix.T) / 2
-        # Get contact matrix
-        output /= age_distribution  # divides and assign the result to output (16, 16)
-        return output
-
-
+        return upper_tri_elements, new_symmetric_matrix
 
 
 

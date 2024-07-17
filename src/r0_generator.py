@@ -43,32 +43,23 @@ class R0Generator:
 
         return f
 
-    def get_eig_val(self, population: torch.Tensor, contact_mtx: torch.Tensor,
-                    susceptibles: torch.Tensor):
-        if contact_mtx is not None:
-            self.contact_matrix = contact_mtx.detach().requires_grad_(True)  # track gradients
-
-        contact_matrix = self.contact_matrix / population.reshape((-1, 1))
+    def compute_ngm_large(self, contact_mtx: torch.Tensor, population: torch.Tensor,
+                           susceptibles: torch.Tensor) -> torch.Tensor:
+        contact_matrix = contact_mtx / population.reshape((-1, 1))
         contact_matrix_tensor = contact_matrix * susceptibles
-
         f = self._get_f(contact_matrix_tensor)
         ngm_large = torch.matmul(f, self.v_matrix.v_inv)
+        return ngm_large
+
+    def compute_ngm_small(self, population: torch.Tensor, contact_mtx: torch.Tensor,
+                           susceptibles: torch.Tensor) -> torch.Tensor:
         # Compute ngm_small
+        ngm_large = self.compute_ngm_large(contact_mtx=contact_mtx,
+                                           population=population,
+                                           susceptibles=susceptibles)
         ngm_small_tensor = torch.matmul(torch.matmul(self.e_matrix.e, ngm_large),
                                         self.e_matrix.e.T)
-        ngm_small_grads = torch.zeros((self.n_age, self.n_age, self.n_age, self.n_age),
-                                      dtype=torch.float32)
-        ngm_small_tensor.requires_grad_(True)
-        for i in range(self.n_age):
-            for j in range(self.n_age):
-                # Compute the gradient of ngm_small_tensor[i, j]
-                # with respect to contact_matrix_tensor
-                grad = torch.autograd.grad(outputs=ngm_small_tensor[i, j],
-                                           inputs=self.contact_matrix,
-                                           retain_graph=True,
-                                           create_graph=True)[0]
-                ngm_small_grads[i, j] = grad
-        return ngm_small_tensor, ngm_small_grads
+        return ngm_small_tensor
 
 
 

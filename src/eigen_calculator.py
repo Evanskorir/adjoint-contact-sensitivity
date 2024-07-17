@@ -22,3 +22,6 @@ class EigenCalculator:
         self.dominant_eig_val = eig_vals[max_eigval_idx].real.item()
         self.dominant_eig_vecs = eig_vecs[:, max_eigval_idx].real
 
+
+
+
