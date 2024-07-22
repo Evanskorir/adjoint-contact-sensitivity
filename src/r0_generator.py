@@ -5,7 +5,7 @@ from src.v_matrix import VMatrix
 
 class R0Generator:
     def __init__(self, param: dict, n_age: int) -> None:
-        self.contact_matrix = None
+        self.symmetric_contact_matrix = None
         states = ["l1", "l2", "ip", "a1", "a2", "a3", "i1", "i2", "i3"]
         self.states = states
         self.n_age = n_age
@@ -43,18 +43,18 @@ class R0Generator:
 
         return f
 
-    def compute_ngm_large(self, contact_mtx: torch.Tensor, population: torch.Tensor,
-                           susceptibles: torch.Tensor) -> torch.Tensor:
-        contact_matrix = contact_mtx / population.reshape((-1, 1))
+    def compute_ngm_large(self, symmetric_contact_mtx: torch.Tensor,
+                          population: torch.Tensor, susceptibles: torch.Tensor) -> torch.Tensor:
+        contact_matrix = symmetric_contact_mtx / population.reshape((-1, 1))
         contact_matrix_tensor = contact_matrix * susceptibles
         f = self._get_f(contact_matrix_tensor)
         ngm_large = torch.matmul(f, self.v_matrix.v_inv)
         return ngm_large
 
-    def compute_ngm_small(self, population: torch.Tensor, contact_mtx: torch.Tensor,
+    def compute_ngm_small(self, population: torch.Tensor, symmetric_contact_mtx: torch.Tensor,
                            susceptibles: torch.Tensor) -> torch.Tensor:
         # Compute ngm_small
-        ngm_large = self.compute_ngm_large(contact_mtx=contact_mtx,
+        ngm_large = self.compute_ngm_large(symmetric_contact_mtx=symmetric_contact_mtx,
                                            population=population,
                                            susceptibles=susceptibles)
         ngm_small_tensor = torch.matmul(torch.matmul(self.e_matrix.e, ngm_large),
