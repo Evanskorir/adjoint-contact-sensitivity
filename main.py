@@ -6,6 +6,7 @@ from src.simulation_base import SimulationBase
 def main():
     data = DataLoader()
     sim = SimulationBase(data=data)
+    sim.run()
 
 
 if __name__ == '__main__':

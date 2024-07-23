@@ -43,31 +43,13 @@ class R0Generator:
 
         return f
 
-    def compute_ngm_large(self, symmetric_contact_mtx: torch.Tensor,
-                          population: torch.Tensor, susceptibles: torch.Tensor) -> torch.Tensor:
-        contact_matrix = symmetric_contact_mtx / population.reshape((-1, 1))
-        contact_matrix_tensor = contact_matrix * susceptibles
+    def compute_ngm_small(self, symmetric_contact_mtx: torch.Tensor) -> torch.Tensor:
+        # Calculate large domain NGM
+        contact_matrix_tensor = symmetric_contact_mtx  # * (susceptibles / population).reshape((-1, 1))
         f = self._get_f(contact_matrix_tensor)
         ngm_large = torch.matmul(f, self.v_matrix.v_inv)
-        return ngm_large
 
-    def compute_ngm_small(self, population: torch.Tensor, symmetric_contact_mtx: torch.Tensor,
-                           susceptibles: torch.Tensor) -> torch.Tensor:
-        # Compute ngm_small
-        ngm_large = self.compute_ngm_large(symmetric_contact_mtx=symmetric_contact_mtx,
-                                           population=population,
-                                           susceptibles=susceptibles)
+        # Calculate small domain NGM
         ngm_small_tensor = torch.matmul(torch.matmul(self.e_matrix.e, ngm_large),
                                         self.e_matrix.e.T)
         return ngm_small_tensor
-
-
-
-
-
-
-
-
-
-
-

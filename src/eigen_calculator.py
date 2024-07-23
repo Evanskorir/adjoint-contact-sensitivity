@@ -21,7 +21,3 @@ class EigenCalculator:
         # Extract the dominant eigenvalue and its corresponding eigenvector
         self.dominant_eig_val = eig_val[max_eigval_idx].real.item()
         self.dominant_eig_vec = eig_vec[:, max_eigval_idx].real
-
-
-
-

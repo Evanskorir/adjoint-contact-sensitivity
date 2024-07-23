@@ -16,6 +16,3 @@ class EMatrix:
         for _ in range(1, self.n_age):
             self.e = block_diag(self.e, block)
             self.e = torch.tensor(self.e, dtype=torch.float32)
-
-
-

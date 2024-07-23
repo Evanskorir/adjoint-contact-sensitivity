@@ -45,5 +45,3 @@ class OriginalCMSymmetrization:
         symmetrized_orig_total_cm = ((contact_matrix * age_distribution) +
                               (contact_matrix * age_distribution).T) / 2
         return symmetrized_orig_total_cm
-
-

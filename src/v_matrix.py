@@ -50,8 +50,3 @@ class VMatrix:
         v[idx("i3"), idx("i3")] = self.n_i * self.parameters["gamma_s"]
 
         self.v_inv = torch.linalg.inv(v)
-
-
-
-
-
