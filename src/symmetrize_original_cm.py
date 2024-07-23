@@ -9,7 +9,7 @@ class OriginalCMSymmetrization:
         """
         self.data = data
 
-    def calculate_full_transformed_cm(self) -> torch.Tensor:
+    def calculate_full_total_transformed_cm(self) -> torch.Tensor:
         """
         Calculate and return the full transformed contact matrix.
         The full contact matrix is derived from the sum of various contact matrices
@@ -17,8 +17,8 @@ class OriginalCMSymmetrization:
         Returns: torch.Tensor: The symmetrized and transformed full contact matrix.
         """
         full_orig_cm = self._calculate_full_orig_cm()
-        transformed_orig_cm = self._transform_orig_cm(full_orig_cm)
-        return transformed_orig_cm
+        transformed_total_orig_cm = self._transform_orig_total_cm(full_orig_cm)
+        return transformed_total_orig_cm
 
     def _calculate_full_orig_cm(self) -> torch.Tensor:
         """
@@ -34,16 +34,16 @@ class OriginalCMSymmetrization:
         )
         return full_orig_cm
 
-    def _transform_orig_cm(self, contact_matrix: torch.Tensor) -> torch.Tensor:
+    def _transform_orig_total_cm(self, contact_matrix: torch.Tensor) -> torch.Tensor:
         """
         Transform and symmetrize the given contact matrix.
         The transformation involves multiplying by the age distribution and symmetrizing.
         Args: contact_matrix (torch.Tensor): The contact matrix to transform.
-        Returns: torch.Tensor: The transformed and symmetrized contact matrix.
+        Returns: torch.Tensor: The transformed total and symmetrized contact matrix.
         """
         age_distribution = self.data.age_data.reshape((-1, 1))  # (16, 1) column vector
-        symmetrized_orig_cm = ((contact_matrix * age_distribution) +
+        symmetrized_orig_total_cm = ((contact_matrix * age_distribution) +
                               (contact_matrix * age_distribution).T) / 2
-        return symmetrized_orig_cm
+        return symmetrized_orig_total_cm
 
 

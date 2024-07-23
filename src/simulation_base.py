@@ -59,14 +59,14 @@ class SimulationBase:
         """
         # Original contact matrix symmetrization
         matrix_symmetrization = OriginalCMSymmetrization(self.data)
-        transformed_orig_cm = matrix_symmetrization.calculate_full_transformed_cm()
+        transformed_total_orig_cm = matrix_symmetrization.calculate_full_total_transformed_cm()
 
         # Extract upper triangular elements of the contact matrix
         contact_matrix_input = ContactMatrixInput(
             n_age=self.n_age, pop=self.population,
-            transformed_orig_cm=transformed_orig_cm
+            transformed_total_orig_cm=transformed_total_orig_cm
         )
-        self.contact_input = contact_matrix_input.get_upper_tri_elems_orig_cm()
+        self.contact_input = contact_matrix_input.get_upper_tri_elems_total_full_orig_cm()
 
         # Create a new symmetric contact matrix
         symmetric_contact_matrix_input = SymmetricContactMatrixInput(
