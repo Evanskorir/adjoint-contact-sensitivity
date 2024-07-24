@@ -17,8 +17,6 @@ class SimulationBase:
         """
         self.data = data
         self.population = self.data.age_data
-        # self.susceptibles = self.population.copy()
-        # self.susceptibles[3] -= 1
         self.n_age = len(self.data.age_data)
 
         self.contact_input = None
@@ -105,5 +103,5 @@ class SimulationBase:
         eigen_calculator = EigenCalculator(ngm_small_tensor=self.ngm_small_tensor)
         self.eigen_vector = eigen_calculator.dominant_eig_vec
 
-        # Additionally we store the dominant eigenvalue
+        # Additionally, we store the dominant eigenvalue
         self.eigen_value = eigen_calculator.dominant_eig_val

@@ -20,4 +20,4 @@ class EigenGrad:
                                            retain_graph=True,
                                            create_graph=True)[0]
                 ngm_small_grads[i, :, j] = grad
-        return ngm_small_grads
+        return ngm_small_grads    # 16 * 136 * 16
