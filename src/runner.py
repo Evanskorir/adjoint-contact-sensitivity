@@ -21,6 +21,7 @@ class Runner:
         self.n_age = len(self.data.age_data)
 
         self.contact_input = None
+        self.contact_input_sum = None
         self.symmetric_contact_matrix = None
         self.ngm_small_tensor = None
         self.ngm_small_grads = None
@@ -91,6 +92,7 @@ class Runner:
         )
         cm_elements_cg_leaf.run()
         self.contact_input = cm_elements_cg_leaf.contact_input.requires_grad_(True)
+        self.contact_input_sum = cm_elements_cg_leaf.contact_input_sum
 
     def _contact_matrix_manipulation(self):
         """
@@ -101,7 +103,8 @@ class Runner:
             n_age=self.n_age,
             pop=self.population.reshape((-1, 1))
         )
-        cm_creator.run(contact_matrix=self.contact_input)
+        cm_creator.run(contact_matrix=self.contact_input,
+                       contact_matrix_sum=self.contact_input_sum)
         self.symmetric_contact_matrix = cm_creator.cm
 
     def _calculate_eigenvectors(self):

@@ -15,12 +15,13 @@ class CMCreator:
 
         self.cm = None
 
-    def run(self, contact_matrix):
+    def run(self, contact_matrix, contact_matrix_sum):
         """
         Create a symmetric matrix from the upper triangular elements of the contact matrix.
         Returns: torch.Tensor: A tensor containing the symmetric matrix derived from the
         upper triangular elements.
         """
+        cm_elements = contact_matrix * contact_matrix_sum
         # Create a new matrix filled with zeros
         new_sym_contact_mtx = torch.zeros((self.n_age, self.n_age))
 
@@ -28,7 +29,7 @@ class CMCreator:
         upper_tri_idx = torch.triu_indices(self.n_age, self.n_age, offset=0)
 
         # Fill the upper triangular part with the extracted elements
-        new_sym_contact_mtx[upper_tri_idx[0], upper_tri_idx[1]] = contact_matrix
+        new_sym_contact_mtx[upper_tri_idx[0], upper_tri_idx[1]] = cm_elements
 
         # Transpose the upper triangular matrix to fill the lower triangular part
         new_sym_contact_mtx_transposed = new_sym_contact_mtx + new_sym_contact_mtx.T - \

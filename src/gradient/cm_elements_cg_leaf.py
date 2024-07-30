@@ -17,6 +17,7 @@ class CMElementsCGLeaf:
         # Get the indices of the upper triangular part
         self.upper_tri_idx = torch.triu_indices(self.n_age, self.n_age, offset=0)
         self.contact_input = None
+        self.contact_input_sum = None
 
     def run(self):
         """
@@ -29,3 +30,5 @@ class CMElementsCGLeaf:
         self.contact_input = self.transformed_total_orig_cm[
             self.upper_tri_idx[0], self.upper_tri_idx[1]
         ]
+        self.contact_input_sum = torch.sum(self.contact_input)
+        self.contact_input /= self.contact_input_sum
