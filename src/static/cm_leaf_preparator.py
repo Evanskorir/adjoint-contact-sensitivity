@@ -1,15 +1,16 @@
 import torch
 
 
-class OriginalCMSymmetrization:
+class CGLeafPreparator:
     def __init__(self, data):
         """
         Initialize the class with data.
         Args: data: An instance of DataLoader containing contact and age data.
         """
         self.data = data
+        self.transformed_total_orig_cm = None
 
-    def calculate_full_total_transformed_cm(self) -> torch.Tensor:
+    def run(self):
         """
         Calculate and return the full transformed contact matrix.
         The full contact matrix is derived from the sum of various contact matrices
@@ -17,8 +18,7 @@ class OriginalCMSymmetrization:
         Returns: torch.Tensor: The symmetrized and transformed full contact matrix.
         """
         full_orig_cm = self._calculate_full_orig_cm()
-        transformed_total_orig_cm = self._transform_orig_total_cm(full_orig_cm)
-        return transformed_total_orig_cm
+        self.transformed_total_orig_cm = self._transform_orig_total_cm(full_orig_cm)
 
     def _calculate_full_orig_cm(self) -> torch.Tensor:
         """

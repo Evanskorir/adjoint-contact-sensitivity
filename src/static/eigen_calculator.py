@@ -9,9 +9,7 @@ class EigenCalculator:
         self.dominant_eig_vec = None
         self.dominant_eig_val = None
 
-        self.compute_dominant_eigen()
-
-    def compute_dominant_eigen(self):
+    def run(self):
         # Compute eigenvalues and eigenvectors
         eig_val, eig_vec = torch.linalg.eig(self.ngm_small_tensor)
 

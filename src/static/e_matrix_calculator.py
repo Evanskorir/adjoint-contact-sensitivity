@@ -2,7 +2,7 @@ import torch
 from scipy.linalg import block_diag
 
 
-class EMatrix:
+class EMatrixCalculator:
     def __init__(self, n_states, n_age: int) -> None:
         self.n_states = n_states
         self.n_age = n_age

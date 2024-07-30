@@ -1,12 +1,11 @@
-
-from src.dataloader import DataLoader
-from src.simulation_base import SimulationBase
+from src.runner import Runner
+from src.static.dataloader import DataLoader
 
 
 def main():
     data = DataLoader()
-    sim = SimulationBase(data=data)
-    sim.run()
+    runner = Runner(data=data)
+    runner.run()
 
 
 if __name__ == '__main__':

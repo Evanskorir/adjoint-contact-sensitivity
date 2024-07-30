@@ -1,7 +1,7 @@
 import torch
 
 
-class SymmetricContactMatrixInput:
+class CMCreator:
     def __init__(self, n_age: int, pop: torch.Tensor):
         """
         Initialize the class with the number of age groups, population data, and
@@ -13,7 +13,9 @@ class SymmetricContactMatrixInput:
         self.n_age = n_age
         self.pop = pop
 
-    def create_symmetric_matrix(self, contact_matrix) -> torch.Tensor:
+        self.cm = None
+
+    def run(self, contact_matrix):
         """
         Create a symmetric matrix from the upper triangular elements of the contact matrix.
         Returns: torch.Tensor: A tensor containing the symmetric matrix derived from the
@@ -33,6 +35,4 @@ class SymmetricContactMatrixInput:
             torch.diag(new_sym_contact_mtx.diag())
 
         # Divide by the population to get the full symmetric contact matrix
-        symmetric_contact_matrix = new_sym_contact_mtx_transposed / self.pop
-
-        return symmetric_contact_matrix
+        self.cm = new_sym_contact_mtx_transposed / self.pop

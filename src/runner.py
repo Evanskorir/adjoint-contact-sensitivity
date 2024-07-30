@@ -1,15 +1,16 @@
 import torch
-from src.symmetrize_original_cm import OriginalCMSymmetrization
-from src.input_contact_mtx import ContactMatrixInput
-from src.symmetrize_contact_input import SymmetricContactMatrixInput
-from src.eigen_calculator import EigenCalculator
-from src.ngm_cm_grad import EigenGrad
-from src.r0_cm_grad import EigenCMGrad
-from src.r0_generator import R0Generator
-from src.dataloader import DataLoader
+
+from src.eigen_value_gradient import EigenValueGradient
+from src.static.cm_leaf_preparator import CGLeafPreparator
+from src.static.eigen_calculator import EigenCalculator
+from src.gradient.cm_creator import CMCreator
+from src.gradient.cm_elements_cg_leaf import CMElementsCGLeaf
+from src.gradient.ngm_calculator import NGMCalculator
+from src.gradient.ngm_gradient import NGMGradient
+from src.static.dataloader import DataLoader
 
 
-class SimulationBase:
+class Runner:
     def __init__(self, data: DataLoader):
         """
         Initialize the simulation with the provided data.
@@ -29,7 +30,8 @@ class SimulationBase:
         self._update_model_parameters_with_susceptibility()
 
         # Initialize R0 generator
-        self.r0 = R0Generator(param=self.data.model_parameters_data, n_age=self.n_age)
+        self.ngm_calculator = NGMCalculator(param=self.data.model_parameters_data,
+                                            n_age=self.n_age)
 
     def run(self):
         """
@@ -44,24 +46,29 @@ class SimulationBase:
         self._contact_matrix_manipulation()
 
         # 3. Compute the next generation matrix (NGM)
-        self.ngm_small_tensor = self.r0.compute_ngm_small(
+        self.ngm_calculator.run(
             symmetric_contact_mtx=self.symmetric_contact_matrix
         )
+        self.ngm_small_tensor = self.ngm_calculator.ngm_small_tensor
 
         # 4.a. Calculate gradients of the NGM
-        self.ngm_small_grads = EigenGrad(
+        ngm_grad = NGMGradient(
             ngm_small_tensor=self.ngm_small_tensor,
             contact_input=self.contact_input
-        ).ngm_small_grads
+        )
+        ngm_grad.run()
+        self.ngm_small_grads = ngm_grad.ngm_small_grads
 
         # 4.b. Calculate eigenvectors
         self._calculate_eigenvectors()
 
         # 5. Calculate the gradient of R0 with respect to the contact matrix
-        self.r0_cm_grad = EigenCMGrad(
+        eigen_value_gradient = EigenValueGradient(
             ngm_small_tensor=self.ngm_small_tensor,
             dominant_eig_vec=self.eigen_vector
-        ).calculate_eigen_val_cm_grad(ngm_small_grads=self.ngm_small_grads)
+        )
+        eigen_value_gradient.run(ngm_small_grads=self.ngm_small_grads)
+        self.r0_cm_grad = eigen_value_gradient.eig_val_cm_grad
 
     def _update_model_parameters_with_susceptibility(self):
         """
@@ -73,26 +80,29 @@ class SimulationBase:
 
     def _create_leaf(self):
         # Original contact matrix symmetrization
-        transformed_total_orig_cm = OriginalCMSymmetrization(
-            self.data
-        ).calculate_full_total_transformed_cm()
+        cg_leaf_preparator = CGLeafPreparator(data=self.data)
+        cg_leaf_preparator.run()
+        transformed_total_orig_cm = cg_leaf_preparator.transformed_total_orig_cm
 
         # Extract upper triangular elements of the contact matrix
-        self.contact_input = ContactMatrixInput(
+        cm_elements_cg_leaf = CMElementsCGLeaf(
             n_age=self.n_age,
             transformed_total_orig_cm=transformed_total_orig_cm
-        ).get_upper_tri_elems_total_full_orig_cm()
-        self.contact_input.requires_grad_(True)
+        )
+        cm_elements_cg_leaf.run()
+        self.contact_input = cm_elements_cg_leaf.contact_input.requires_grad_(True)
 
     def _contact_matrix_manipulation(self):
         """
         Perform manipulations on contact matrices to generate the necessary inputs.
         """
         # Create a new symmetric contact matrix
-        self.symmetric_contact_matrix = SymmetricContactMatrixInput(
+        cm_creator = CMCreator(
             n_age=self.n_age,
             pop=self.population.reshape((-1, 1))
-        ).create_symmetric_matrix(contact_matrix=self.contact_input)
+        )
+        cm_creator.run(contact_matrix=self.contact_input)
+        self.symmetric_contact_matrix = cm_creator.cm
 
     def _calculate_eigenvectors(self):
         """
@@ -100,7 +110,10 @@ class SimulationBase:
         """
 
         # Calculate the dominant eigenvalue and eigenvector
-        eigen_calculator = EigenCalculator(ngm_small_tensor=self.ngm_small_tensor)
+        eigen_calculator = EigenCalculator(
+            ngm_small_tensor=self.ngm_small_tensor
+        )
+        eigen_calculator.run()
         self.eigen_vector = eigen_calculator.dominant_eig_vec
 
         # Additionally, we store the dominant eigenvalue

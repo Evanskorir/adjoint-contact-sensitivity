@@ -1,9 +1,9 @@
 import torch
-from src.e_matrix import EMatrix
-from src.v_matrix import VMatrix
+from src.static.e_matrix_calculator import EMatrixCalculator
+from src.static.v_matrix_calculator import VMatrixCalculator
 
 
-class R0Generator:
+class NGMCalculator:
     def __init__(self, param: dict, n_age: int) -> None:
         self.symmetric_contact_matrix = None
         states = ["l1", "l2", "ip", "a1", "a2", "a3", "i1", "i2", "i3"]
@@ -18,9 +18,9 @@ class R0Generator:
         self.n_a = 3
         self.n_i = 3
 
-        self.e_matrix = EMatrix(n_states=self.n_states, n_age=n_age)
-        self.v_matrix = VMatrix(param=param, n_states=self.n_states,
-                                n_age=n_age, states=self.states)
+        self.e_matrix = EMatrixCalculator(n_states=self.n_states, n_age=n_age)
+        self.v_matrix = VMatrixCalculator(param=param, n_states=self.n_states,
+                                          n_age=n_age, states=self.states)
 
     def _get_f(self, contact_mtx: torch.Tensor) -> torch.Tensor:
         i = self.i
@@ -43,13 +43,14 @@ class R0Generator:
 
         return f
 
-    def compute_ngm_small(self, symmetric_contact_mtx: torch.Tensor) -> torch.Tensor:
+    def run(self, symmetric_contact_mtx: torch.Tensor):
         # Calculate large domain NGM
         contact_matrix_tensor = symmetric_contact_mtx  # * (susceptibles / population).reshape((-1, 1))
         f = self._get_f(contact_matrix_tensor)
         ngm_large = torch.matmul(f, self.v_matrix.v_inv)
 
         # Calculate small domain NGM
-        ngm_small_tensor = torch.matmul(torch.matmul(self.e_matrix.e, ngm_large),
-                                        self.e_matrix.e.T)
-        return ngm_small_tensor
+        self.ngm_small_tensor = torch.matmul(
+            torch.matmul(self.e_matrix.e, ngm_large),
+            self.e_matrix.e.T
+        )
