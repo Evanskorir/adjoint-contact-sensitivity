@@ -1,13 +1,13 @@
 import torch
 
 from src.eigen_value_gradient import EigenValueGradient
-from src.static.cm_leaf_preparator import CGLeafPreparator
-from src.static.eigen_calculator import EigenCalculator
 from src.gradient.cm_creator import CMCreator
 from src.gradient.cm_elements_cg_leaf import CMElementsCGLeaf
 from src.gradient.ngm_calculator import NGMCalculator
 from src.gradient.ngm_gradient import NGMGradient
+from src.static.cm_leaf_preparator import CGLeafPreparator
 from src.static.dataloader import DataLoader
+from src.static.eigen_calculator import EigenCalculator
 
 
 class Runner:
