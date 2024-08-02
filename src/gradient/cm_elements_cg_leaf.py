@@ -2,15 +2,18 @@ import torch
 
 
 class CMElementsCGLeaf:
-    def __init__(self, n_age: int,
+    def __init__(self, n_age: int, pop: torch.Tensor,
                  transformed_total_orig_cm: torch.Tensor):
         """
         Initialize the class with the number of age groups, population data,
         and contact matrix.
         Args:
             n_age (int): The number of age groups.
+            pop (torch.Tensor): A tensor representing the population data.
             transformed_total_orig_cm (torch.Tensor): The original transformed total cm.
         """
+
+        self.pop = pop
         self.n_age = n_age
         self.transformed_total_orig_cm = transformed_total_orig_cm
 
@@ -18,8 +21,9 @@ class CMElementsCGLeaf:
         self.upper_tri_idx = torch.triu_indices(self.n_age, self.n_age, offset=0)
         self.contact_input = None
         self.contact_input_sum = None
+        self.pop_sum = None
 
-    def run(self):
+    def run(self, scale="pop"):
         """
         Extract the upper triangular elements of the contact matrix and
         create a symmetric matrix.
@@ -30,5 +34,9 @@ class CMElementsCGLeaf:
         self.contact_input = self.transformed_total_orig_cm[
             self.upper_tri_idx[0], self.upper_tri_idx[1]
         ]
-        self.contact_input_sum = torch.sum(self.contact_input)
-        self.contact_input /= self.contact_input_sum
+        if scale == "pop":
+            self.pop_sum = torch.sum(self.pop)
+            self.contact_input /= self.pop_sum
+        else:
+            self.contact_input_sum = torch.sum(self.contact_input)
+            self.contact_input /= self.contact_input_sum

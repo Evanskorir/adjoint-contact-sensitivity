@@ -21,3 +21,4 @@ class NGMGradient:
                                            create_graph=True)[0]
                 ngm_small_grads[i, :, j] = grad
         self.ngm_small_grads = ngm_small_grads    # 16 * 136 * 16
+        

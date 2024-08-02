@@ -5,6 +5,7 @@ from src.static.v_matrix_calculator import VMatrixCalculator
 
 class NGMCalculator:
     def __init__(self, param: dict, n_age: int) -> None:
+        self.ngm_small_tensor = None
         self.symmetric_contact_matrix = None
         states = ["l1", "l2", "ip", "a1", "a2", "a3", "i1", "i2", "i3"]
         self.states = states

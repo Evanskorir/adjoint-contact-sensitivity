@@ -15,13 +15,17 @@ class CMCreator:
 
         self.cm = None
 
-    def run(self, contact_matrix, contact_matrix_sum):
+    def run(self, contact_matrix, contact_matrix_sum, scale="pop"):
         """
         Create a symmetric matrix from the upper triangular elements of the contact matrix.
         Returns: torch.Tensor: A tensor containing the symmetric matrix derived from the
         upper triangular elements.
         """
-        cm_elements = contact_matrix * contact_matrix_sum
+        if scale == "pop":
+            cm_elements = contact_matrix * torch.sum(self.pop)
+        else:
+            cm_elements = contact_matrix * contact_matrix_sum
+
         # Create a new matrix filled with zeros
         new_sym_contact_mtx = torch.zeros((self.n_age, self.n_age))
 

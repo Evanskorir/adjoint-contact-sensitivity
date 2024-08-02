@@ -8,6 +8,8 @@ from src.gradient.ngm_gradient import NGMGradient
 from src.static.cm_leaf_preparator import CGLeafPreparator
 from src.static.dataloader import DataLoader
 from src.static.eigen_calculator import EigenCalculator
+from src.aggregation_logic import Aggregation
+from src.plotter import Plotter
 
 
 class Runner:
@@ -71,6 +73,23 @@ class Runner:
         eigen_value_gradient.run(ngm_small_grads=self.ngm_small_grads)
         self.r0_cm_grad = eigen_value_gradient.eig_val_cm_grad
 
+        # 6. Use aggregation logic to get age group pairs sensitivity values
+        agg = Aggregation(data=self.data, n_age=self.n_age, pop=self.population,
+                          calculation_approach="mean", grad_mtx=self.r0_cm_grad)
+
+        # 7. Generate the plots from plotter to visualize the sensitivities
+        plot = Plotter(n_age=self.n_age)
+        plot.plot_small_ngm_mtx(ngm_matrix=agg.grads_mtx,
+                                plot_title="Sensitivity values")
+        plot.plot_grads_p_values_as_heatmap(grads_vector=agg.grads_mtx,
+                                            p_values=agg.p_values_mtx,
+                                            plot_title=None)
+        plot.plot_aggregation_grads_pvalues(grads_vector=agg.agg_prcc,
+                                            std_values=agg.agg_std,
+                                            conf_upper=agg.confidence_upper,
+                                            conf_lower=agg.confidence_lower,
+                                            calculation_approach="mean")
+
     def _update_model_parameters_with_susceptibility(self):
         """
         Update model parameters with susceptibility data.
@@ -88,8 +107,8 @@ class Runner:
         # Extract upper triangular elements of the contact matrix
         cm_elements_cg_leaf = CMElementsCGLeaf(
             n_age=self.n_age,
-            transformed_total_orig_cm=transformed_total_orig_cm
-        )
+            transformed_total_orig_cm=transformed_total_orig_cm,
+            pop=self.population)
         cm_elements_cg_leaf.run()
         self.contact_input = cm_elements_cg_leaf.contact_input.requires_grad_(True)
         self.contact_input_sum = cm_elements_cg_leaf.contact_input_sum
