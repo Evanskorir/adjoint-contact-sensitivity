@@ -23,7 +23,7 @@ class CMElementsCGLeaf:
         self.contact_input_sum = None
         self.pop_sum = None
 
-    def run(self, scale="pop"):
+    def run(self, scale: str):
         """
         Extract the upper triangular elements of the contact matrix and
         create a symmetric matrix.
@@ -34,9 +34,12 @@ class CMElementsCGLeaf:
         self.contact_input = self.transformed_total_orig_cm[
             self.upper_tri_idx[0], self.upper_tri_idx[1]
         ]
-        if scale == "pop":
+        if scale == "pop_sum":
             self.pop_sum = torch.sum(self.pop)
             self.contact_input /= self.pop_sum
-        else:
+        elif scale == "contact_sum":
             self.contact_input_sum = torch.sum(self.contact_input)
             self.contact_input /= self.contact_input_sum
+        elif scale == "no_scale":
+            self.contact_input = self.contact_input
+

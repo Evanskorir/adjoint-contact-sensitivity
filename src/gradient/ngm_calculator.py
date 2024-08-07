@@ -46,7 +46,7 @@ class NGMCalculator:
 
     def run(self, symmetric_contact_mtx: torch.Tensor):
         # Calculate large domain NGM
-        contact_matrix_tensor = symmetric_contact_mtx  # * (susceptibles / population).reshape((-1, 1))
+        contact_matrix_tensor = symmetric_contact_mtx
         f = self._get_f(contact_matrix_tensor)
         ngm_large = torch.matmul(f, self.v_matrix.v_inv)
 
