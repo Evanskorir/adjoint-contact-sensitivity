@@ -12,10 +12,10 @@ class EigenValueGradient:
         # Reshape self.dominant_eig_vec to be a column vector
         eig_vec = self.dominant_eig_vec.view(-1, 1)  # Shape: [16, 1]
 
-        # Compute Ax: ngm_small_grads @ eig_vec for each slice
+        # Compute A @ x: ngm_small_grads @ eig_vec for each slice
         a_dot_x = torch.matmul(ngm_small_grads, eig_vec).squeeze(dim=2)  # Shape: [16, 136]
 
-        # Compute eig_vec.T @ Ax
-        # Reshape eig_vec.T to match the multiplication with B
+        # Compute x.T @ A @ x
+        # Reshape x.T to match the multiplication with B
         eig_vec_transpose = self.dominant_eig_vec.view(1, -1)  # Shape: [1, 16]
         self.eig_val_cm_grad = torch.matmul(eig_vec_transpose, a_dot_x)

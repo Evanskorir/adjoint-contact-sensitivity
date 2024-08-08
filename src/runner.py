@@ -1,8 +1,9 @@
 import os
+
 import torch
 
-from src.plotter import Plotter
 from src.gradient.sensitivity_calculator import SensitivityCalculator
+from src.plotter import Plotter
 from src.static.dataloader import DataLoader
 
 

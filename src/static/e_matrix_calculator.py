@@ -1,5 +1,5 @@
-import torch
 from scipy.linalg import block_diag
+import torch
 
 
 class EMatrixCalculator:
