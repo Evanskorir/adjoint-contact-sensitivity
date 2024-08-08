@@ -2,7 +2,7 @@ import os
 import torch
 
 from src.plotter import Plotter
-from src.sensitivity_calculator import SensitivityCalculator
+from src.gradient.sensitivity_calculator import SensitivityCalculator
 from src.static.dataloader import DataLoader
 
 
