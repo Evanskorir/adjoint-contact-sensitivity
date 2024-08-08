@@ -21,17 +21,18 @@ class SensitivityCalculator:
         self.eigen_value = None
         self.eigen_vector = None
         self.contact_input = None
-        self.contact_input_sum = None
+        self.scale_value = None
         self.symmetric_contact_matrix = None
 
     def run(self, scale: str, params: dict):
+        # Starting initialization
+        self.ngm_calculator = NGMCalculator(n_age=self.n_age,
+                                            param=params)
         # 1. Create leaf of the computation graph
         self._create_leaf(scale)
         # 2. Perform contact matrix manipulations
         self._contact_matrix_manipulation(scale)
         # 3. Compute the next generation matrix (NGM)
-        self.ngm_calculator = NGMCalculator(n_age=self.n_age,
-                                            param=params)
         self.ngm_calculator.run(
             symmetric_contact_mtx=self.symmetric_contact_matrix)
         self.ngm_small_tensor = self.ngm_calculator.ngm_small_tensor
@@ -61,7 +62,7 @@ class SensitivityCalculator:
             pop=self.population)
         cm_elements_cg_leaf.run(scale=scale)
         self.contact_input = cm_elements_cg_leaf.contact_input.requires_grad_(True)
-        self.contact_input_sum = cm_elements_cg_leaf.contact_input_sum
+        self.scale_value = cm_elements_cg_leaf.scale_value
 
     def _contact_matrix_manipulation(self, scale: str):
         """
@@ -71,7 +72,7 @@ class SensitivityCalculator:
         cm_creator = CMCreator(n_age=self.n_age,
                                pop=self.population.reshape((-1, 1)))
         cm_creator.run(contact_matrix=self.contact_input,
-                       contact_matrix_sum=self.contact_input_sum,
+                       scale_value=self.scale_value,
                        scale=scale)
         self.symmetric_contact_matrix = cm_creator.cm
 

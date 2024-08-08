@@ -17,9 +17,7 @@ class VMatrixCalculator:
         self._get_v()
 
     def _idx(self, state: str) -> torch.Tensor:
-        return torch.tensor(
-            torch.arange(self.n_age * self.n_states) % self.n_states == self.i[state]
-        )
+        return torch.arange(self.n_age * self.n_states) % self.n_states == self.i[state]
 
     def _get_v(self):
         idx = self._idx

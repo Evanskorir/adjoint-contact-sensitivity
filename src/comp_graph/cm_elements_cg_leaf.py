@@ -20,8 +20,7 @@ class CMElementsCGLeaf:
         # Get the indices of the upper triangular part
         self.upper_tri_idx = torch.triu_indices(self.n_age, self.n_age, offset=0)
         self.contact_input = None
-        self.contact_input_sum = None
-        self.pop_sum = None
+        self.scale_value = None
 
     def run(self, scale: str):
         """
@@ -35,11 +34,12 @@ class CMElementsCGLeaf:
             self.upper_tri_idx[0], self.upper_tri_idx[1]
         ]
         if scale == "pop_sum":
-            self.pop_sum = torch.sum(self.pop)
-            self.contact_input /= self.pop_sum
+            self.scale_value = torch.sum(self.pop)
+            self.contact_input /= self.scale_value
         elif scale == "contact_sum":
-            self.contact_input_sum = torch.sum(self.contact_input)
-            self.contact_input /= self.contact_input_sum
+            self.scale_value = torch.sum(self.contact_input)
+            self.contact_input /= self.scale_value
         elif scale == "no_scale":
-            self.contact_input = self.contact_input
-
+            pass
+        else:
+            raise ValueError(f"Unrecognized scale {scale}")
