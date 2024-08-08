@@ -10,8 +10,9 @@ class Plotter:
     def __init__(self, n_age: int) -> None:
         self.n_age = n_age
 
-    def plot_contact_input(self, contact_input: torch.Tensor, plot_title: str,
-                           filename: str, folder: str):
+    def plot_contact_input(
+            self, contact_input: torch.Tensor, plot_title: str,
+            filename: str, folder: str):
         contact_input = contact_input.detach().numpy()
         contact_input_full = np.zeros((self.n_age, self.n_age)) * np.nan
 
@@ -30,11 +31,12 @@ class Plotter:
 
         # Create a heatmap with the 'Greens' colormap and apply the mask
         cax = ax.imshow(contact_input_masked, cmap='Greens', aspect='auto',
-                        vmin=np.nanmin(contact_input_full),
-                        vmax=np.nanmax(contact_input_full))
+                        vmin=float(np.nanmin(contact_input_full)),
+                        vmax=float(np.nanmax(contact_input_full))
+                        )
 
         # Manually position the colorbar
-        cbar_ax = fig.add_axes([1.05, 0.2, 0.02, 0.6])  # [left, bottom, width, height]
+        cbar_ax = fig.add_axes((1.05, 0.2, 0.02, 0.6))  # [left, bottom, width, height]
         cbar = fig.colorbar(cax, cax=cbar_ax)
 
         # Remove upper and left axis spines
@@ -91,8 +93,10 @@ class Plotter:
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
         plt.close()
 
-    def plot_small_ngm_contact_grad_mtx(self, matrix: torch.Tensor, plot_title: str,
-                           filename: str, folder: str):
+    def plot_small_ngm_contact_grad_mtx(
+            self, matrix: torch.Tensor, plot_title: str,
+            filename: str, folder: str
+    ):
         fig, ax = plt.subplots(figsize=(10, 10))
         ngm_cont_grad = matrix.detach().numpy()  # Detach the tensor before converting to numpy
 
@@ -136,8 +140,8 @@ class Plotter:
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
         plt.close()
 
-    def reconstruct_plot_symmetric_grad_matrix(self,
-                                               grad_mtx: torch.Tensor) -> torch.Tensor:
+    def reconstruct_plot_symmetric_grad_matrix(
+            self, grad_mtx: torch.Tensor) -> torch.Tensor:
         """
         Reconstruct a symmetric grad matrix from the upper triangular elements.
         Args: grad_mtx (torch.Tensor): Input tensor containing the upper tri elements.
