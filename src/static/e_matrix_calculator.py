@@ -3,7 +3,7 @@ import torch
 
 
 class EMatrixCalculator:
-    def __init__(self, n_states, n_age: int) -> None:
+    def __init__(self, n_states: int, n_age: int) -> None:
         self.n_states = n_states
         self.n_age = n_age
 

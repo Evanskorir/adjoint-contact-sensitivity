@@ -41,7 +41,7 @@ class Runner:
 
                 self.create_plots(scale=scale, susc=susc)
 
-    def create_plots(self, scale, susc):
+    def create_plots(self, scale: str, susc: float):
         for base_r0 in self.r0_choices:
             beta = base_r0 / self.sensitivity_calc.eigen_value
             # Scale the gradients with beta

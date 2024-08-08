@@ -24,7 +24,7 @@ class SensitivityCalculator:
         self.contact_input_sum = None
         self.symmetric_contact_matrix = None
 
-    def run(self, scale, params):
+    def run(self, scale: str, params: dict):
         # 1. Create leaf of the computation graph
         self._create_leaf(scale)
         # 2. Perform contact matrix manipulations

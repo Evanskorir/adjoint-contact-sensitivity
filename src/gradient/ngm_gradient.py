@@ -10,9 +10,11 @@ class NGMGradient:
         self.ngm_small_grads = None
 
     def run(self):
-        ngm_small_grads = torch.zeros((self.ngm_small_tensor.size(0),
-                                       self.contact_input.size(0),
-                                       self.ngm_small_tensor.size(1)), dtype=torch.float32)
+        ngm_small_grads = torch.zeros(
+            (self.ngm_small_tensor.size(0),
+             self.contact_input.size(0),
+             self.ngm_small_tensor.size(1)),
+            dtype=torch.float32)
         for i in range(self.ngm_small_tensor.size(0)):
             for j in range(self.ngm_small_tensor.size(1)):
                 grad = torch.autograd.grad(outputs=self.ngm_small_tensor[i, j],

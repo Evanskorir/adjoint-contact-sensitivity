@@ -1,8 +1,10 @@
 import torch
 
+from src.static.dataloader import DataLoader
+
 
 class CGLeafPreparator:
-    def __init__(self, data):
+    def __init__(self, data: DataLoader):
         """
         Initialize the class with data.
         Args: data: An instance of DataLoader containing contact and age data.

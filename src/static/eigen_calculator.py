@@ -2,8 +2,7 @@ import torch
 
 
 class EigenCalculator:
-    def __init__(self, ngm_small_tensor) -> None:
-
+    def __init__(self, ngm_small_tensor: torch.Tensor) -> None:
         self.ngm_small_tensor = ngm_small_tensor
 
         self.dominant_eig_vec = None

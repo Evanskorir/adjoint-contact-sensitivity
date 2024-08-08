@@ -2,7 +2,7 @@ import torch
 
 
 class VMatrixCalculator:
-    def __init__(self, param: dict, n_states, n_age: int, states) -> None:
+    def __init__(self, param: dict, n_states: int, n_age: int, states) -> None:
         self.n_states = n_states
         self.states = states
         self.n_age = n_age
@@ -17,7 +17,9 @@ class VMatrixCalculator:
         self._get_v()
 
     def _idx(self, state: str) -> torch.Tensor:
-        return torch.arange(self.n_age * self.n_states) % self.n_states == self.i[state]
+        return torch.tensor(
+            torch.arange(self.n_age * self.n_states) % self.n_states == self.i[state]
+        )
 
     def _get_v(self):
         idx = self._idx
