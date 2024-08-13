@@ -29,9 +29,9 @@ class SensitivityCalculator:
         self.ngm_calculator = NGMCalculator(n_age=self.n_age,
                                             param=params)
         # 1. Create leaf of the computation graph
-        self._create_leaf(scale)
+        self._create_leaf(scale=scale)
         # 2. Perform contact matrix manipulations
-        self._contact_matrix_manipulation(scale)
+        self._contact_matrix_manipulation(scale=scale)
         # 3. Compute the next generation matrix (NGM)
         self.ngm_calculator.run(
             symmetric_contact_mtx=self.symmetric_contact_matrix)
