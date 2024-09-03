@@ -45,8 +45,8 @@ class Runner:
         for base_r0 in self.r0_choices:
             beta = base_r0 / self.sensitivity_calc.eigen_value
             # Scale the gradients with beta
-            self.r0_cm_grad = beta * self.sensitivity_calc.eigen_value_gradient.eig_val_cm_grad
-
+            self.r0_cm_grad = beta * \
+                              self.sensitivity_calc.eigen_value_gradient.eig_val_cm_grad
             # 6. Generate the plots from plotter to visualize the gradients with
             # different base r0's and susc
             # Create folder with base R0 and susc
@@ -64,8 +64,15 @@ class Runner:
                                     filename="contact_input.pdf",
                                     folder=scale_folder)
 
+            plot.plot_grads(grads=self.r0_cm_grad,
+                            plot_title=f"Grads using {scale} scaling\n"
+                                       f"susc={susc}, base_r0={base_r0}",
+                            filename="Grads_tri.pdf",
+                            folder=scale_folder)
+
             matrices = [
-                (self.sensitivity_calc.ngm_small_tensor, "NGM with Small Domain", "ngm_heatmap.pdf"),
+                (self.sensitivity_calc.ngm_small_tensor, "NGM with Small Domain",
+                 "ngm_heatmap.pdf"),
                 (self.sensitivity_calc.symmetric_contact_matrix,
                  "Symmetrized Contact " "Input Matrix", "CM.pdf"),
                 (plot.reconstruct_plot_symmetric_grad_matrix(self.r0_cm_grad),

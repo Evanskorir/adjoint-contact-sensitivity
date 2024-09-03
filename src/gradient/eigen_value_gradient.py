@@ -17,5 +17,6 @@ class EigenValueGradient:
 
         # Compute x.T @ A @ x
         # Reshape x.T to match the multiplication with B
-        eig_vec_transpose = self.dominant_eig_vec.view(1, -1)  # Shape: [1, 16]
+        # get the eig_vec_transpose
+        eig_vec_transpose = self.dominant_eig_vec.T
         self.eig_val_cm_grad = torch.matmul(eig_vec_transpose, a_dot_x)
