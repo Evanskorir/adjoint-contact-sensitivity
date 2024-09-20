@@ -10,13 +10,12 @@ we compute gradients that help identify critical age-specific contact behaviors 
 - **NGM Analysis**: Assessing the impact of perturbations in the contact matrix on the Next Generation Matrix (NGM).
 
 ## Data Files
-├── data  
-│   ├── age_distribution       # Population data for each age group used in the model.
-
-│   ├── contact_matrices       # Contact matrices for various settings: Home, School, Work, and Other.
-
-│   └── model_parameters       # JSON files containing model parameters.
-
+```
+data  
+  ├── age_distribution       # Population data for each age group used in the model.
+  ├── contact_matrices       # Contact matrices for various settings: Home, School, Work, and Other.
+  └── model_parameters       # JSON files containing model parameters.
+```
 ## Target Investigated
 - **R0 (Basic Reproduction Number)**
   - **Description**: Represents the average number of secondary infections caused by one infected individual in a 
@@ -27,33 +26,28 @@ A summary about the steps of the research project:
 ![Flowchart of Project Methodology](src/flowchart.png)
 
 ## Folder Structure
-├── data                
-├── src                    
-│   ├── comp_graph        
-│   │   ├── cm_creator    
-│   │   ├── cm_elements_cg_leaf   
-│   │   ├── ngm_calculator        
-│   ├── gradient        
-│   │   ├── eigen_value_gradient    
-│   │   ├── ngm_gradient  
-│   │   ├── sensitivity_calculator
-
-│   ├── static          
-│   │   ├── cm_leaf_preparatory       
-│   │   ├── dataloader 
-
-│   │   ├── e_matrix_calculator  
-│   │   ├── eigen_calculator 
-
-│   │   ├── v_matrix_calculator
-
-│   ├── plotter               
-
-│   └── runner
-
-├── main 
-
-└── README
+```
+data                
+src                    
+ ├── comp_graph        
+ │   ├── cm_creator    
+ │   ├── cm_elements_cg_leaf   
+ │   └── ngm_calculator        
+ ├── gradient        
+ │   ├── eigen_value_gradient    
+ │   ├── ngm_gradient  
+ │   └── sensitivity_calculator
+ ├── static          
+ │   ├── cm_leaf_preparatory       
+ │   ├── dataloader 
+ │   ├── e_matrix_calculator  
+ │   ├── eigen_calculator 
+ │   └── v_matrix_calculator
+ ├── plotter               
+ └── runner
+main 
+README
+```
 
 
 ## File Details
