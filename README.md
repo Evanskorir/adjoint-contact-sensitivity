@@ -16,6 +16,7 @@ data
   ├── contact_matrices       # Contact matrices for various settings: Home, School, Work, and Other.
   └── model_parameters       # JSON files containing model parameters.
 ```
+
 ## Target Investigated
 - **R0 (Basic Reproduction Number)**
   - **Description**: Represents the average number of secondary infections caused by one infected individual in a 
@@ -48,7 +49,6 @@ src
 main 
 README
 ```
-
 
 ## File Details
 #### `src/comp_graph/`
@@ -96,21 +96,18 @@ runner = Runner(data=data)
 runner.run()  
 
 ## Output
-├── generated
 
-│   ├── results_base_r0_X.X_susc_Y.Y
+```
+generated
+    ├── results_base_r0_X.X_susc_Y.Y
+    │   ├── scale # contact_sum, no_scale, pop_sum.
+    │   │   ├── CM.pdf # Visualizes the symmetric contact input as matrix using the selected scaling. 
+    │   │   ├── contact_input.pdf # Visualizes the symmetric contact input using the selected scaling (upper tri shape).
+    │   │   ├── Grads.pdf # Shows the gradients with different base R0s and susc as a square symmetric matrix.
+    │   │   ├── Grads_tri.pdf # Shows the gradients with different base R0s and susc as upper tri elements.
+    │   │   ├── ngm_heatmap.pdf # Displays the NGM with small domain heatmap.
 
-│   │   ├── scale # contact_sum, no_scale, pop_sum.
-
-│   │   │   ├── CM.pdf # Visualizes the symmetric contact input as matrix using the selected scaling. 
-
-│   │   │   ├── contact_input.pdf # Visualizes the symmetric contact input using the selected scaling (upper tri shape).
-
-│   │   │   ├── Grads.pdf # Shows the gradients with different base R0s and susc as a square symmetric matrix.
-
-│   │   │   ├── Grads_tri.pdf # Shows the gradients with different base R0s and susc as upper tri elements.
-
-│   │   │   ├── ngm_heatmap.pdf # Displays the NGM with small domain heatmap.
+```
 
 ## Requirement
 This project is developed and tested with Python 3.8 or higher. Install dependencies from `requirements.txt`:
