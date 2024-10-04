@@ -99,13 +99,13 @@ runner.run()
 
 ```
 generated
-    ├── results_base_r0_X.X_susc_Y.Y
-    │   ├── scale # contact_sum, no_scale, pop_sum.
-    │   │   ├── CM.pdf # Visualizes the symmetric contact input as matrix using the selected scaling. 
-    │   │   ├── contact_input.pdf # Visualizes the symmetric contact input using the selected scaling (upper tri shape).
-    │   │   ├── Grads.pdf # Shows the gradients with different base R0s and susc as a square symmetric matrix.
-    │   │   ├── Grads_tri.pdf # Shows the gradients with different base R0s and susc as upper tri elements.
-    │   │   ├── ngm_heatmap.pdf # Displays the NGM with small domain heatmap.
+    └── results_base_r0_X.X_susc_Y.Y
+        └── scale # contact_sum, no_scale, pop_sum.
+            ├── CM.pdf # Visualizes the symmetric contact input as matrix using the selected scaling. 
+            ├── contact_input.pdf # Visualizes the symmetric contact input using the selected scaling (upper tri shape).
+            ├── Grads.pdf # Shows the gradients with different base R0s and susc as a square symmetric matrix.
+            ├── Grads_tri.pdf # Shows the gradients with different base R0s and susc as upper tri elements.
+            └── ngm_heatmap.pdf # Displays the NGM with small domain heatmap.
 
 ```
 

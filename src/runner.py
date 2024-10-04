@@ -3,7 +3,6 @@ import torch
 from src.gradient.sensitivity_calculator import SensitivityCalculator
 from src.plotter import Plotter
 from src.static.dataloader import DataLoader
-from src.truncated_svd_aggregation import PCAForGradients
 
 
 class Runner:
@@ -66,8 +65,7 @@ class Runner:
             os.makedirs(scale_folder, exist_ok=True)
 
             # Generate plots for contact input, gradients, NGM matrix, etc.
-            self.generate_plots(scale_folder=scale_folder, base_r0=base_r0,
-                                susc=susc, scale=scale)
+            self.generate_plots(scale_folder=scale_folder, base_r0=base_r0)
 
     def calculate_projected_gradients(self, base_r0: float):
         """
@@ -79,22 +77,15 @@ class Runner:
         self.params.update({"beta": beta})
 
         # Scale the eigenvalue gradient by beta to get r0_cm_grad
-        self.r0_cm_grad = beta * \
-                          self.sensitivity_calc.eigen_value_gradient.eig_val_cm_grad
+        self.r0_cm_grad = beta * self.sensitivity_calc.eigen_value_gradient.eig_val_cm_grad
 
-        # apply truncated_svd to get the aggregated values as the first PC
-        pca = PCAForGradients(n_components=1, n_age=self.n_age)
-        self.svd = pca.fit_transform(grad_mtx=self.r0_cm_grad)
-
-    def generate_plots(self, scale_folder: str, base_r0: float, susc: float, scale: str):
+    def generate_plots(self, scale_folder: str, base_r0: float):
         """
         Generate various plots such as contact matrix, gradients, NGM matrix, etc.,
         and save them in the specified folder.
         Args:
             scale_folder (str): Path to the folder where plots will be saved.
             base_r0 (float): Base R0 value used for the simulation.
-            susc (float): Susceptibility value used.
-            scale (str): Scaling method used (e.g., "pop_sum", "contact_sum", etc.).
         """
         plot = Plotter(data=self.data, n_age=self.n_age)
 
@@ -105,7 +96,7 @@ class Runner:
         # Plot contact input matrix
         plot.plot_contact_input(
             contact_input=self.sensitivity_calc.contact_input,
-            plot_title=None,
+            plot_title="",
             filename="contact_input.pdf",
             folder=scale_folder
         )

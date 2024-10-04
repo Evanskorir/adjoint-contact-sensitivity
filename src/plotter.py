@@ -41,11 +41,11 @@ class Plotter:
                                  i != "Full"]).sum(axis=0)
         contact_data["Full"] = contact_full
 
-        # Determine global vmin and vmax across all contact matrices
+        # Determine global v_min and v_max across all contact matrices
         all_values = np.concatenate([contact_data[contact_type].flatten() for
                                      contact_type in contact_data.keys()])
-        vmin = all_values.min()
-        vmax = all_values.max()
+        v_min = all_values.min()
+        v_max = all_values.max()
 
         for contact_type in contact_data.keys():
             # Get the contact matrix for the current type
@@ -56,7 +56,7 @@ class Plotter:
             # Plotting the heatmap
             plt.figure(figsize=(10, 8))
             ax = sns.heatmap(contact_matrix, cmap=green_cmap, square=True,
-                             vmin=vmin, vmax=vmax,  # Use global vmin and vmax
+                             vmin=v_min, vmax=v_max,  # Use global v_min and v_max
                              cbar=(contact_type == "Full"), annot=False, fmt=".1f",
                              linewidths=0.5, linecolor='lightgray')
 
@@ -82,9 +82,9 @@ class Plotter:
                 # cbar.set_label('Contact Frequency', fontsize=14,
                 # fontweight='bold', labelpad=15)
 
-                cbar.set_ticks(np.linspace(vmin, vmax, num=5))
-                cbar.set_ticklabels([f'{tick:.1f}' for tick in np.linspace(vmin,
-                                                                           vmax, num=5)])
+                cbar.set_ticks(np.linspace(v_min, v_max, num=5))
+                cbar.set_ticklabels([f'{tick:.1f}' for tick in np.linspace(v_min,
+                                                                           v_max, num=5)])
 
                 # Customize colorbar aesthetics
                 cbar.outline.set_visible(True)  # Show the outline of the colorbar
@@ -264,14 +264,14 @@ class Plotter:
         """
         ngm_cont_grad = matrix.detach().numpy()
 
-        # Derive vmin and vmax from the matrix
+        # Derive v_min and v_max from the matrix
         v_min = ngm_cont_grad.min()  # Minimum value of the matrix
         v_max = ngm_cont_grad.max()  # Maximum value of the matrix
 
         # Set up the figure and axis
         fig, ax = plt.subplots(figsize=(8, 8))  # Increase figure size for better visibility
 
-        # Create a heatmap with the specified vmin and vmax
+        # Create a heatmap with the specified v_min and v_max
         cax = ax.matshow(ngm_cont_grad, cmap='Greens', aspect='auto', vmin=v_min, vmax=v_max)
 
         # Add a color bar if show_colorbar is True
@@ -373,8 +373,8 @@ class Plotter:
             percentage_contact = np.zeros_like(total_contacts)
 
         # Calculate 95% percentile intervals
-        lower_percentiles = np.percentile(symmetrized_cont_matrix, 2.5, axis=0)
-        upper_percentiles = np.percentile(symmetrized_cont_matrix, 97.5, axis=0)
+        # lower_percentiles = np.percentile(symmetrized_cont_matrix, 2.5, axis=0)
+        # upper_percentiles = np.percentile(symmetrized_cont_matrix, 97.5, axis=0)
 
         # Compute the error as the difference between upper and lower percentiles
         # percentile_errors = (upper_percentiles - lower_percentiles) / total_sum * 100
