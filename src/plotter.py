@@ -11,12 +11,26 @@ matplotlib.use('agg')
 
 
 class Plotter:
-    def __init__(self, data, n_age: int) -> None:
+    def __init__(self, data, n_age: int, model: str) -> None:
         self.data = data
         self.n_age = n_age
-        self.labels = ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29",
-                       "30-34", "35-39", "40-44", "45-49", "50-54", "55-59",
-                       "60-64", "65-69", "70-74", "75+"]
+        if model == "rost":
+            self.labels = ["0-4", "5-9", "10-14", "15-19", "20-24",
+                     "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                     "55-59", "60-64", "65-69", "70-74", "75+"]
+
+        elif model == "moghadas":
+            self.labels = ["0-19", "20-49", "50-65", "65+"]
+        elif model == "chikina":
+            self.labels = ["0-4", "5-9", "10-14", "15-19", "20-24",
+                     "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                     "55-59", "60-64", "65-69", "70-74", "75-79", "80+"]
+        elif model == "seir":
+            self.labels = ["0-4", "5-9", "10-14", "15-19", "20-24",
+                     "25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
+                     "55-59", "60-64", "65-69", "70+"]
+        else:
+            raise Exception("Invalid model")
 
         # create data matrix
         self.create_matrix = np.zeros((self.n_age, self.n_age)) * np.nan
@@ -316,9 +330,6 @@ class Plotter:
 
         # Invert y-axis for correct orientation
         ax.invert_yaxis()
-
-        # Add gridlines for better readability
-        ax.grid(which='major', color='gray', linestyle='--', linewidth=0.5)
 
         # Adjust layout to avoid overlap
         plt.tight_layout()
