@@ -11,6 +11,9 @@ from src.models.chikina.ngm_calculator import NGMCalculator as ChikinaNGMCalcula
 from src.models.moghadas.ngm_calculator import NGMCalculator as MoghadasNGMCalculator
 from src.models.seir.ngm_calculator import NGMCalculator as SeirNGMCalculator
 from src.models.rost.ngm_calculator import NGMCalculator as RostNGMCalculator
+from src.models.italy.ngm_calculator import NGMCalculator as ItalyNGMCalculator
+from src.models.kenya.ngm_calculator import NGMCalculator as KenyaNGMCalculator
+from src.models.british_columbia.ngm_calculator import NGMCalculator as BCNGMCalculator
 
 
 class SensitivityCalculator:
@@ -45,6 +48,12 @@ class SensitivityCalculator:
             self.ngm_calculator_class = SeirNGMCalculator
         elif self.model == "rost":
             self.ngm_calculator_class = RostNGMCalculator
+        elif self.model == "italy":
+            self.ngm_calculator_class = ItalyNGMCalculator
+        elif self.model == "kenya":
+            self.ngm_calculator_class = KenyaNGMCalculator
+        elif self.model == "british_columbia":
+            self.ngm_calculator_class = BCNGMCalculator
         else:
             raise ValueError(f"Unknown model: {self.model}")
 
