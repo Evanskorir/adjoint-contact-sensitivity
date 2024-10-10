@@ -17,6 +17,7 @@ class Runner:
         self.n_age = len(self.data.age_data)
         self.params = self.data.model_parameters_data
         self.model = model
+        self.labels = self.data.labels
 
         self.sensitivity_calc = SensitivityCalculator(data=self.data, model=self.model)
         self.r0_cm_grad = None
@@ -85,7 +86,7 @@ class Runner:
             scale_folder (str): Path to the folder where plots will be saved.
             base_r0 (float): Base R0 value used for the simulation.
         """
-        plot = Plotter(data=self.data, n_age=self.n_age, model=self.model)
+        plot = Plotter(data=self.data, n_age=self.n_age)
 
         # Plot contact matrices
         plot.plot_contact_matrices(contact_data=self.data.contact_data,
