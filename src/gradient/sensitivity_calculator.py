@@ -140,3 +140,9 @@ class SensitivityCalculator:
         )
         eigen_value_grad.run(ngm_small_grads=self.ngm_small_grads)
         self.eigen_value_gradient = eigen_value_grad
+
+
+
+
+
+
