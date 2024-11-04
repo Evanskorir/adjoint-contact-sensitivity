@@ -24,7 +24,7 @@ class Plotter:
         Plot contact matrices for different settings and save them in a sub-directory.
         Args:
             filename (str): The filename prefix for the saved PDF files.
-            model (str): The models implemented for the framework.
+            model (str): The model for which the matrices are being plotted.
             contact_data (dict): A dictionary containing contact matrices for different categories.
         """
         output_dir = f"generated/{model}/contact_matrices"
@@ -43,36 +43,43 @@ class Plotter:
         v_min = all_values.min()
         v_max = all_values.max()
 
+        # Set the constant figure size for all plots
+        fig_size = (8, 8)  # Define a uniform figure size
+
         for contact_type in contact_data.keys():
             # Get the contact matrix for the current type
             contacts = contact_data[contact_type]
             contact_matrix = pd.DataFrame(contacts, columns=range(self.n_age), index=range(self.n_age))
 
-            # Create the plot
-            plt.figure(figsize=(10, 8))
+            # Create the plot with a constant figure size
+            plt.figure(figsize=fig_size)
             ax = sns.heatmap(contact_matrix, cmap=reversed_greens_cmap, square=True,
                              vmin=v_min, vmax=v_max,  # Use global v_min and v_max
-                             cbar=(contact_type == "Full"), annot=False, fmt=".1f")
+                             annot=False, fmt=".1f",
+                             cbar=False)
+
+            # Set the aspect ratio to be equal for all plots
+            ax.set_aspect("equal")
 
             # Rotate y tick labels and invert y-axis for correct orientation
             plt.yticks(rotation=0)
             ax.invert_yaxis()
 
             # Set axis labels and improve them with larger font and bold styling
-            ax.set_xticklabels(self.labels, rotation=45, ha='center', fontsize=12, fontweight='bold', color='darkgreen')
-            ax.set_yticklabels(self.labels, fontsize=12, fontweight='bold', color='darkgreen')
+            ax.set_xticklabels(self.labels, rotation=45, ha='center',
+                               fontsize=15, fontweight='bold', color='darkgreen')
+            ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold', color='darkgreen')
 
             # Set the title for each contact type with bold, larger font
             plt.title(f"{contact_type}", fontsize=25, fontweight="bold", color='darkgreen')
 
-            # Customize colorbar for the "Full" contact matrix
-            if contact_type == "Full":
-                cbar = ax.collections[0].colorbar
+            # Customize colorbar for the "Other" contact matrix
+            if contact_type == "Other":
+                cbar = plt.colorbar(ax.collections[0], ax=ax, orientation='vertical',
+                                    shrink=0.8, aspect=40, pad=0.02)
                 cbar.ax.tick_params(labelsize=12)
                 cbar.set_ticks(np.linspace(v_min, v_max, num=5))
                 cbar.set_ticklabels([f'{tick:.1f}' for tick in np.linspace(v_min, v_max, num=5)])
-
-                # Customize colorbar aesthetics
                 cbar.outline.set_visible(True)
                 cbar.outline.set_linewidth(1.5)
                 cbar.set_alpha(1.0)
@@ -92,7 +99,50 @@ class Plotter:
             plt.savefig(os.path.join(output_dir, f"{filename}_{contact_type}.pdf"), format="pdf", bbox_inches='tight')
             plt.close()
 
-    def plot_heatmap(self, data: np.ndarray, plot_title: str, filename: str, folder: str, annotate: bool = True):
+        # Create an additional plot for the lower triangular of the "Full" matrix
+            if "Full" in contact_data:
+                # Get the "Full" contact matrix
+                contact_matrix = pd.DataFrame(contact_data["Full"], columns=range(self.n_age), index=range(self.n_age))
+
+                # Create a mask to extract only the lower triangular part (including the diagonal)
+                mask = np.triu(np.ones_like(contact_matrix, dtype=bool))
+
+                # Create the plot with a constant figure size
+                plt.figure(figsize=fig_size)
+                ax = sns.heatmap(contact_matrix, mask=~mask, cmap=reversed_greens_cmap, square=True,
+                                 vmin=v_min, vmax=v_max, annot=True, fmt=".1f", cbar=False)
+
+                # Set the aspect ratio to be equal for all plots
+                ax.set_aspect("equal")
+
+                # Rotate y tick labels and invert y-axis for correct orientation
+                plt.yticks(rotation=0)
+                ax.invert_yaxis()
+
+                # Set axis labels and improve them with larger font and bold styling
+                ax.set_xticklabels(self.labels, rotation=45, ha='center',
+                                   fontsize=12, fontweight='bold', color='darkgreen')
+                ax.set_yticklabels(self.labels, rotation=0, fontsize=12, fontweight='bold',
+                                   color='darkgreen')
+
+                # Move y-axis labels and ticks to the right
+                ax.yaxis.set_label_position("right")
+                ax.yaxis.tick_right()
+
+
+            # Remove spines for a clean look
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_visible(False)
+            ax.spines['bottom'].set_visible(False)
+
+            # Save the figure in the appropriate directory
+            plt.savefig(os.path.join(output_dir, f"{filename}_Full_lower_triangular.pdf"), format="pdf",
+                        bbox_inches='tight')
+            plt.close()
+
+    def plot_heatmap(self, data: np.ndarray, plot_title: str, filename: str,
+                     folder: str, annotate: bool = True):
         """
         Method to plot a heatmap with a polished, reversed green colormap, clean layout, and enhanced annotations.
         """
@@ -226,15 +276,16 @@ class Plotter:
         v_min = ngm_cont_grad.min()  # Minimum value of the matrix
         v_max = ngm_cont_grad.max()  # Maximum value of the matrix
 
-        # Create a custom reversed green colormap (light green for low, dark green for high values)
-        colors = ["#f7fcf5", "#c7e9c0", "#74c476", "#238b45", "#00441b"]
-        reversed_greens_cmap = LinearSegmentedColormap.from_list("ReversedGreens", colors)
+        # Create a custom reversed blue colormap (light blue for low, dark blue for high values)
+        colors = ["#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b"]
+        reversed_blues_cmap = LinearSegmentedColormap.from_list("ReversedBlues", colors)
 
         # Set up the figure and axis
         fig, ax = plt.subplots(figsize=(8, 8))  # Larger figure size for better readability
 
         # Create a heatmap with the reversed green colormap
-        cax = ax.matshow(ngm_cont_grad, cmap=reversed_greens_cmap, aspect='auto', vmin=v_min, vmax=v_max)
+        cax = ax.matshow(ngm_cont_grad, cmap=reversed_blues_cmap, aspect='auto',
+                         vmin=v_min, vmax=v_max)
 
         # Add a color bar if show_colorbar is True
         if show_colorbar:
@@ -249,7 +300,7 @@ class Plotter:
             # Additional aesthetics for color bar ticks
             for tick in cbar.ax.get_yticklabels():
                 tick.set_fontsize(12)
-                tick.set_color('darkgreen')
+                tick.set_color('darkblue')
 
         # Set ticks and labels
         ax.set_xticks(np.arange(self.n_age))  # Position ticks at the centers of the columns
@@ -266,8 +317,8 @@ class Plotter:
             ax.xaxis.set_ticks_position('bottom')  # Keep ticks at the bottom
             ax.xaxis.set_tick_params(labeltop=False)  # Hide top labels
         else:
-            ax.set_xticklabels(self.labels, rotation=45, ha='center', fontsize=12, fontweight='bold', color='darkgreen')
-            ax.set_yticklabels(self.labels, fontsize=12, fontweight='bold', color='darkgreen')
+            ax.set_xticklabels(self.labels, rotation=45, ha='center', fontsize=15, fontweight='bold', color='darkblue')
+            ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold', color='darkblue')
             ax.xaxis.set_ticks_position('bottom')
             ax.xaxis.set_tick_params(labeltop=False)
 

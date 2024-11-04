@@ -9,10 +9,11 @@ class NGMCalculator(NGMCalculatorBase):
         self.parameters = param
         self.n_states = len(states)
 
-        super().__init__(param=param, n_age=n_age, states=states)
+        super().__init__(param=self.parameters, n_age=n_age, states=states)
         self.symmetric_contact_matrix = None
 
-        self.v_matrix = VMatrixCalculator(param=param, n_age=n_age, states=self.states)
+        self.v_matrix = VMatrixCalculator(param=self.parameters, n_age=self.n_age,
+                                          states=self.states)
 
     def _get_f(self, contact_mtx: torch.Tensor) -> torch.Tensor:
         i = self.i

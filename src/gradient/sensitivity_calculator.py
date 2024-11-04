@@ -134,10 +134,8 @@ class SensitivityCalculator:
         self.eigen_value = eigen_calculator.dominant_eig_val
 
         # Calculate eigenvalue gradient
-        eigen_value_grad = EigenValueGradient(
-            ngm_small_tensor=self.ngm_small_tensor,
-            dominant_eig_vec=self.eigen_vector
-        )
+        eigen_value_grad = EigenValueGradient(ngm_small_tensor=self.ngm_small_tensor,
+                                              dominant_eig_vec=self.eigen_vector)
         eigen_value_grad.run(ngm_small_grads=self.ngm_small_grads)
         self.eigen_value_gradient = eigen_value_grad
 
