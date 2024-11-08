@@ -3,8 +3,8 @@ from src.static.dataloader import DataLoader
 
 
 def main():
-    data = DataLoader(model="british_columbia")
-    runner = Runner(data=data, model="british_columbia")
+    data = DataLoader(model="kenya")
+    runner = Runner(data=data, model="kenya")
     runner.run()
 
 

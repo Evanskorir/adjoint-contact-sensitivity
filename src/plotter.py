@@ -31,8 +31,8 @@ class Plotter:
         os.makedirs(output_dir, exist_ok=True)
 
         # Create a custom reversed green colormap
-        colors = ["#f7fcf5", "#c7e9c0", "#74c476", "#238b45", "#00441b"]
-        reversed_greens_cmap = LinearSegmentedColormap.from_list("ReversedGreens", colors)
+        colors = ["#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b"]
+        reversed_blues_cmap = LinearSegmentedColormap.from_list("ReversedBlues", colors)
 
         # Calculate the 'Full' contact matrix by summing all matrices except "Full"
         contact_full = np.array([contact_data[i] for i in contact_data.keys() if i != "Full"]).sum(axis=0)
@@ -53,7 +53,7 @@ class Plotter:
 
             # Create the plot with a constant figure size
             plt.figure(figsize=fig_size)
-            ax = sns.heatmap(contact_matrix, cmap=reversed_greens_cmap, square=True,
+            ax = sns.heatmap(contact_matrix, cmap=reversed_blues_cmap, square=True,
                              vmin=v_min, vmax=v_max,  # Use global v_min and v_max
                              annot=False, fmt=".1f",
                              cbar=False)
@@ -67,27 +67,12 @@ class Plotter:
 
             # Set axis labels and improve them with larger font and bold styling
             ax.set_xticklabels(self.labels, rotation=45, ha='center',
-                               fontsize=15, fontweight='bold', color='darkgreen')
-            ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold', color='darkgreen')
+                               fontsize=15, fontweight='bold', color='darkblue')
+            ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold', color='darkblue')
 
             # Set the title for each contact type with bold, larger font
-            plt.title(f"{contact_type}", fontsize=25, fontweight="bold", color='darkgreen')
-
-            # Customize colorbar for the "Other" contact matrix
-            if contact_type == "Other":
-                cbar = plt.colorbar(ax.collections[0], ax=ax, orientation='vertical',
-                                    shrink=0.8, aspect=40, pad=0.02)
-                cbar.ax.tick_params(labelsize=12)
-                cbar.set_ticks(np.linspace(v_min, v_max, num=5))
-                cbar.set_ticklabels([f'{tick:.1f}' for tick in np.linspace(v_min, v_max, num=5)])
-                cbar.outline.set_visible(True)
-                cbar.outline.set_linewidth(1.5)
-                cbar.set_alpha(1.0)
-
-                # Make colorbar ticks green
-                for tick in cbar.ax.get_yticklabels():
-                    tick.set_fontsize(12)
-                    tick.set_color('darkgreen')
+            plt.title(f"{contact_type}", fontsize=25, fontweight="bold",
+                      color='darkblue')
 
             # Remove spines for a clean look
             ax.spines['top'].set_visible(False)
@@ -96,7 +81,8 @@ class Plotter:
             ax.spines['bottom'].set_visible(False)
 
             # Save the figure in the appropriate directory
-            plt.savefig(os.path.join(output_dir, f"{filename}_{contact_type}.pdf"), format="pdf", bbox_inches='tight')
+            plt.savefig(os.path.join(output_dir, f"{filename}_{contact_type}.pdf"),
+                        format="pdf", bbox_inches='tight')
             plt.close()
 
         # Create an additional plot for the lower triangular of the "Full" matrix
@@ -109,7 +95,7 @@ class Plotter:
 
                 # Create the plot with a constant figure size
                 plt.figure(figsize=fig_size)
-                ax = sns.heatmap(contact_matrix, mask=~mask, cmap=reversed_greens_cmap, square=True,
+                ax = sns.heatmap(contact_matrix, mask=~mask, cmap=reversed_blues_cmap, square=True,
                                  vmin=v_min, vmax=v_max, annot=True, fmt=".1f", cbar=False)
 
                 # Set the aspect ratio to be equal for all plots
@@ -128,7 +114,6 @@ class Plotter:
                 # Move y-axis labels and ticks to the right
                 ax.yaxis.set_label_position("right")
                 ax.yaxis.tick_right()
-
 
             # Remove spines for a clean look
             ax.spines['top'].set_visible(False)

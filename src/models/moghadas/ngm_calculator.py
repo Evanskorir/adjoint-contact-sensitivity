@@ -6,7 +6,6 @@ from src.static.ngm_calculator_base import NGMCalculatorBase
 class NGMCalculator(NGMCalculatorBase):
     def __init__(self, param: dict, n_age: int) -> None:
         states = ["e", "i_n", "q_n", "i_h", "q_h", "a_n", "a_q"]
-        self.parameters = param
         self.n_states = len(states)
 
         super().__init__(param=param, n_age=n_age, states=states)

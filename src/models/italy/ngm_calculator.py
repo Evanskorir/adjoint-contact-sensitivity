@@ -6,10 +6,9 @@ from src.static.ngm_calculator_base import NGMCalculatorBase
 class NGMCalculator(NGMCalculatorBase):
     def __init__(self, param: dict, n_age: int) -> None:
         states = ["e", "ip", "ic", "is"]
-        self.parameters = param
         self.n_states = len(states)
 
-        super().__init__(param=param, n_age=n_age, states=states)
+        super().__init__(param=self.parameters, n_age=n_age, states=states)
         self.symmetric_contact_matrix = None
 
         self.v_matrix = VMatrixCalculator(param=param, n_age=n_age, states=self.states)
