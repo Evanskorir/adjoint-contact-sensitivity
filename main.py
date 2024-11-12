@@ -3,8 +3,10 @@ from src.static.dataloader import DataLoader
 
 
 def main():
-    data = DataLoader()
-    runner = Runner(data=data)
+    model = "rost"
+    data = DataLoader(model=model)
+
+    runner = Runner(data=data, epidemic_model=model, model=model)
     runner.run()
 
 
