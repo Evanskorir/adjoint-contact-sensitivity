@@ -14,14 +14,8 @@ class CMData:
         self.model = model
 
     def load_contact_matrix(self) -> torch.Tensor:
-        """
-        Load the appropriate contact matrix based on the model.
-        For certain models (moghadas, seir, etc.), it uses the 'All' contact matrix,
-        otherwise it sums Home, School, Work, and Other contact matrices.
-        Returns: torch.Tensor: The loaded full contact matrix.
-        """
         contact_data = self.data.contact_data
-        if self.model in ["moghadas", "seir", "italy", "british_columbia"]:
+        if self.model in ["seir", "italy", "british_columbia", "moghadas"]:
             full_orig_cm = contact_data["All"]
         else:
             full_orig_cm = (
