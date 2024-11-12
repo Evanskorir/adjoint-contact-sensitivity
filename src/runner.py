@@ -3,10 +3,11 @@ import torch
 from src.gradient.sensitivity_calculator import SensitivityCalculator
 from src.plotter import Plotter
 from src.static.dataloader import DataLoader
+from src.contact_manipulation import ContactManipulation
 
 
 class Runner:
-    def __init__(self, data: DataLoader, model: str):
+    def __init__(self, data: DataLoader, epidemic_model: str, model: str):
         """
         Initialize the simulation with the provided data.
         Args: data (DataLoader): DataLoader object containing age data and model params.
@@ -17,14 +18,16 @@ class Runner:
         self.n_age = len(self.data.age_data)
         self.params = self.data.model_parameters_data
         self.model = model
+        self.epidemic_model = epidemic_model
         self.labels = self.data.labels
 
-        self.sensitivity_calc = SensitivityCalculator(data=self.data, model=self.model)
+        self.sensitivity_calc = SensitivityCalculator(data=self.data, model=self.model,
+                                                      epi_model=epidemic_model)
         self.r0_cm_grad = None
 
         # User-defined parameters
         self.susc_choices = [0.5, 1.0]
-        self.r0_choices = [1.2, 1.8, 2.5]
+        self.r0_choices = [1.2]
         # self.scales = ["pop_sum", "contact_sum", "no_scale"]
         self.scales = ["pop_sum"]
 
@@ -59,7 +62,7 @@ class Runner:
             folder = f"generated/{self.model}/results_base_r0_{base_r0:.1f}_susc_{susc:.1f}"
             os.makedirs(folder, exist_ok=True)
 
-            # Create subfolder for each scale
+            # Create sub_folder for each scale
             scale_folder = os.path.join(folder, scale)
             os.makedirs(scale_folder, exist_ok=True)
 
@@ -149,6 +152,23 @@ class Runner:
             filename="Grads_tri.pdf",
             folder=scale_folder
         )
+
+        # instantiate contact manipulation and get the plot
+        contact_manipulation = ContactManipulation(
+            data=self.data,
+            model_type=self.model,
+            contact_mtx=self.sensitivity_calc.symmetric_contact_matrix,
+            params=self.params,
+            susc=susc, base_r0=base_r0,
+            model=self.sensitivity_calc.model,
+            n_age=self.n_age
+        )
+        contact_manipulation.run_plots(
+            plot_title=f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$",
+            file_name="epidemics.pdf",
+            folder=scale_folder)
+
+
 
 
 

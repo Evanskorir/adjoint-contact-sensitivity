@@ -5,7 +5,7 @@ from src.static.ngm_calculator_base import NGMCalculatorBase
 
 class NGMCalculator(NGMCalculatorBase):
     def __init__(self, param: dict, n_age: int) -> None:
-        states = ["e", "a", "m", "h", "c"]
+        states = ["e", "a", "m", "h", "icu"]
         self.n_states = len(states)
         super().__init__(param=param, n_age=n_age, states=states)
 
@@ -18,11 +18,11 @@ class NGMCalculator(NGMCalculatorBase):
         n_states = self.n_states
 
         f = torch.zeros((self.n_age * n_states, self.n_age * n_states))
+        inf_a = self.parameters["inf_a"] if "inf_a" in self.parameters.keys() else 0.7
+        inf_m = self.parameters["inf_m"] if "inf_m" in self.parameters.keys() else 0.7
 
         susc_vec = self.parameters["susc"].reshape((-1, 1))
-        f[i["e"]:s_mtx:n_states, i["a"]:s_mtx:n_states] = contact_mtx.T * susc_vec
-        f[i["e"]:s_mtx:n_states, i["m"]:s_mtx:n_states] = contact_mtx.T * susc_vec
-        f[i["e"]:s_mtx:n_states, i["h"]:s_mtx:n_states] = contact_mtx.T * susc_vec
-        f[i["e"]:s_mtx:n_states, i["c"]:s_mtx:n_states] = contact_mtx.T * susc_vec
+        f[i["e"]:s_mtx:n_states, i["a"]:s_mtx:n_states] = inf_a * contact_mtx.T * susc_vec
+        f[i["e"]:s_mtx:n_states, i["m"]:s_mtx:n_states] = inf_m * contact_mtx.T * susc_vec
 
         return f

@@ -1,12 +1,18 @@
+# Imports from the 'src.gradient' package
 from src.gradient.eigen_value_gradient import EigenValueGradient
+from src.gradient.ngm_gradient import NGMGradient
+
+# Imports from the 'src.comp_graph' package
 from src.comp_graph.cm_creator import CMCreator
 from src.comp_graph.cm_elements_cg_leaf import CMElementsCGLeaf
-from src.gradient.ngm_gradient import NGMGradient
+
+# Imports from the 'src.static' package
 from src.static.cm_leaf_preparator import CGLeafPreparator
 from src.static.dataloader import DataLoader
 from src.static.eigen_calculator import EigenCalculator
+from src.static.model_base import EpidemicModelBase
 
-# Import NGMCalculators from different models
+# Imports for model calculators, grouped by model type
 from src.models.chikina.ngm_calculator import NGMCalculator as ChikinaNGMCalculator
 from src.models.moghadas.ngm_calculator import NGMCalculator as MoghadasNGMCalculator
 from src.models.seir.ngm_calculator import NGMCalculator as SeirNGMCalculator
@@ -15,13 +21,23 @@ from src.models.italy.ngm_calculator import NGMCalculator as ItalyNGMCalculator
 from src.models.kenya.ngm_calculator import NGMCalculator as KenyaNGMCalculator
 from src.models.british_columbia.ngm_calculator import NGMCalculator as BCNGMCalculator
 
+# Imports for model simulation
+from src.models.rost.model import RostModelHungary
+from src.models.chikina.model import ChikinaModel
+from src.models.british_columbia.model import BCModel
+from src.models.kenya.model import KenyaModel
+from src.models.seir.model import SeirUK
+from src.models.moghadas.model import MoghadasModel
+
 
 class SensitivityCalculator:
-    def __init__(self, data: DataLoader, model: str):
+    def __init__(self, data: DataLoader, model: str, epi_model: str):
+        self.susceptibles = None
         self.data = data
         self.population = self.data.age_data
         self.n_age = len(self.data.age_data)
         self.model = model
+        self.epidemic_model = epi_model
 
         # Initialize variables to store calculated values
         self.ngm_calculator = None
@@ -38,28 +54,25 @@ class SensitivityCalculator:
 
     def _select_ngm_calculator(self):
         """
-        Select the appropriate NGMCalculator based on the model name
+        Select the appropriate NGMCalculator based on the model name.
         """
-        if self.model == "chikina":
-            self.ngm_calculator_class = ChikinaNGMCalculator
-        elif self.model == "moghadas":
-            self.ngm_calculator_class = MoghadasNGMCalculator
-        elif self.model == "seir":
-            self.ngm_calculator_class = SeirNGMCalculator
-        elif self.model == "rost":
-            self.ngm_calculator_class = RostNGMCalculator
-        elif self.model == "italy":
-            self.ngm_calculator_class = ItalyNGMCalculator
-        elif self.model == "kenya":
-            self.ngm_calculator_class = KenyaNGMCalculator
-        elif self.model == "british_columbia":
-            self.ngm_calculator_class = BCNGMCalculator
-        else:
+        model_map = {
+            "chikina": ChikinaNGMCalculator,
+            "moghadas": MoghadasNGMCalculator,
+            "seir": SeirNGMCalculator,
+            "rost": RostNGMCalculator,
+            "italy": ItalyNGMCalculator,
+            "kenya": KenyaNGMCalculator,
+            "british_columbia": BCNGMCalculator
+        }
+
+        self.ngm_calculator_class = model_map.get(self.model)
+        if not self.ngm_calculator_class:
             raise ValueError(f"Unknown model: {self.model}")
 
     def run(self, scale: str, params: dict):
         """
-        Main function to calculate sensitivity using various steps
+        Main function to calculate sensitivity using various steps.
         """
         # 1. Initialize NGM calculator with parameters
         self.ngm_calculator = self.ngm_calculator_class(n_age=self.n_age, param=params)
@@ -80,9 +93,16 @@ class SensitivityCalculator:
         # 6. Calculate eigenvalue and eigenvalue gradients for R0
         self._calculate_eigenvectors()
 
+        # 7. Model simulation and getting their resulting final epidemic size after contact change
+        self.model = EpidemicModelBase(model_data=self.data)
+        self._choose_model(epi_model=self.epidemic_model)
+        self.susceptibles = self.model.get_initial_values()[self.model.c_idx["s"] *
+                                                            self.n_age:(self.model.c_idx["s"] + 1) *
+                                                                       self.n_age]
+
     def _create_leaf(self, scale: str):
         """
-        Create the computation graph leaf (CG leaf) from the original contact matrix
+        Create the computation graph leaf (CG leaf) from the original contact matrix.
         """
         cg_leaf_preparator = CGLeafPreparator(data=self.data, model=self.model)
         cg_leaf_preparator.run()
@@ -99,7 +119,7 @@ class SensitivityCalculator:
 
     def _contact_matrix_manipulation(self, scale: str):
         """
-        Perform manipulations on the contact matrix to produce necessary inputs
+        Perform manipulations on the contact matrix to produce necessary inputs.
         """
         cm_creator = CMCreator(
             n_age=self.n_age,
@@ -114,7 +134,7 @@ class SensitivityCalculator:
 
     def _calculate_ngm_gradients(self):
         """
-        Calculate the gradients of the next generation matrix (NGM)
+        Calculate the gradients of the next generation matrix (NGM).
         """
         ngm_grad = NGMGradient(
             ngm_small_tensor=self.ngm_small_tensor,
@@ -125,7 +145,7 @@ class SensitivityCalculator:
 
     def _calculate_eigenvectors(self):
         """
-        Calculate the dominant eigenvalue and eigenvector, and gradients
+        Calculate the dominant eigenvalue and eigenvector, and gradients.
         """
         eigen_calculator = EigenCalculator(ngm_small_tensor=self.ngm_small_tensor)
         eigen_calculator.run()
@@ -139,8 +159,23 @@ class SensitivityCalculator:
         eigen_value_grad.run(ngm_small_grads=self.ngm_small_grads)
         self.eigen_value_gradient = eigen_value_grad
 
+    def _choose_model(self, epi_model: str):
+        """
+        Choose the appropriate epidemic model.
+        """
+        model_map = {
+            "rost": RostModelHungary,
+            "chikina": ChikinaModel,
+            "british_columbia": BCModel,
+            "kenya": KenyaModel,
+            "seir": SeirUK,
+            "moghadas": MoghadasModel
+        }
 
-
+        self.model = model_map.get(epi_model)
+        if not self.model:
+            raise Exception(f"No model was given for {epi_model}!")
+        self.model = self.model(model_data=self.data)
 
 
 

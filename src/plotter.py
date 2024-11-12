@@ -428,3 +428,183 @@ class Plotter:
         save_path = os.path.join(folder, f"{filename}.pdf")
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
         plt.close()
+
+    def plot_epidemic_peak_and_size(self, time, cm_list, legend_list,
+                                    ratio, model, params,
+                                    filename, model_type, folder,
+                                    susc: float, base_r0: float):
+        """
+        Calculates and saves the peak epidemic size after running a simulation
+        with a modified contact matrix and stores the result in an Excel file,
+        along with saving individual plots for each combination.
+        """
+        # Define a consistent directory for all outputs based on model_type
+        # folder = os.path.join("generated", model_type, "epidemic")
+        os.makedirs(folder, exist_ok=True)
+
+        if not isinstance(ratio, list):
+            ratio = [ratio]
+
+        results_list = []
+        init_values = model.get_initial_values()
+
+        # Set up colormap to select colors dynamically
+        cmap = plt.get_cmap('Purples')
+        color_range = len(cm_list) * len(ratio)
+
+        # Loop over each combination of contact matrix and legend
+        for idx, (c_matrix, legend) in enumerate(zip(cm_list, legend_list)):
+            for r_idx, r in enumerate(ratio):
+                # Simulate the epidemic with the current contact matrix and ratio
+                solution = model.get_solution(
+                    init_values=init_values,
+                    t=time,
+                    parameters=params,
+                    cm=c_matrix
+                )
+                if model_type in ["rost", "seir", "british_columbia", "kenya"]:
+                    total_infecteds = model.aggregate_by_age(
+                        solution=solution,
+                        idx=model.c_idx["c"])
+                elif model_type == "moghadas":
+                    total_infecteds = model.aggregate_by_age(
+                        solution=solution,
+                        idx=model.c_idx["i"])
+                elif model_type == "chikina":
+                    total_infecteds = model.aggregate_by_age(
+                        solution=solution,
+                        idx=model.c_idx["inf"])
+                else:
+                    raise Exception("Invalid model")
+
+                # Only take the maximum value (epidemic size) for the current modification
+                n_infected_max = total_infecteds.max()
+
+                result_entry = {
+                    'susc': susc,
+                    'base_r0': base_r0,
+                    'ratio': r,
+                    'n_infected_max': n_infected_max,
+                    'contact_matrix_legend': legend
+                }
+                results_list.append(result_entry)
+
+                # Generate color from colormap based on index
+                color = cmap((idx * len(ratio) + r_idx) / color_range)
+
+                # Plot the epidemic peak for this specific combination
+                fig, ax = plt.subplots(figsize=(8, 8))
+                ax.plot(time, total_infecteds, label=f'susc={susc}, '
+                                                     f'r0={base_r0}, ratio={1 - r}',
+                        color=color)
+                ax.set_xlabel('Time')
+                ax.set_ylabel('Total Infected')
+                ax.legend()
+                plot_save_path = os.path.join(folder, f"{filename}.pdf")
+                plt.savefig(plot_save_path, format="pdf", bbox_inches='tight',
+                            pad_inches=0.5)
+                plt.close()
+
+        # Save results to an Excel file
+        excel_save_path = os.path.join(folder, f"{filename}.xlsx")
+        df = pd.DataFrame(results_list)
+        df.to_excel(excel_save_path, index=False)
+
+        # Return results_list for further processing
+        return results_list
+
+    def plot_lower_triangular_epidemic_size(self, results_list, folder,
+                                            filename, plot_title):
+        """
+        Creates a lower triangular plot for epidemic sizes, including diagonals
+        and values in all rows.
+        """
+        # Initialize the epidemic matrix with NaNs
+        n_age = self.n_age
+        epidemic_matrix = np.full((n_age, n_age), np.nan)
+
+        # Populate the epidemic_matrix based on results_list data
+        for result in results_list:
+            legend = result['contact_matrix_legend']
+            n_infected_max = result['n_infected_max']
+
+            if "reduction at diagonal indices" in legend:
+                # Handle diagonal reductions
+                index = int(legend.split("(")[1].split(")")[0])
+                epidemic_matrix[index, index] = n_infected_max
+            elif "reduction between indices" in legend:
+                # Parse indices for off-diagonal reductions
+                indices = legend.split("(")[1].split(")")[0].split(", ")
+                row_idx, col_idx = int(indices[0]), int(indices[1])
+
+                # Ensure lower triangular population including the diagonal
+                epidemic_matrix[max(row_idx, col_idx),
+                                min(row_idx, col_idx)] = n_infected_max
+
+        # Transpose for correct orientation
+        epidemic_matrix = epidemic_matrix.T
+
+        # Mask elements strictly below the diagonal
+        mask = np.tril(np.ones_like(epidemic_matrix), k=-1)
+        data_masked = np.ma.masked_array(epidemic_matrix, mask=mask)
+
+        # Set up the plot
+        fig, ax = plt.subplots(figsize=(8, 8))
+
+        # Purple colormap
+        colors = ["#f2e5ff", "#d4a6ff", "#b266ff", "#8a2be2", "#4b0082"]
+        purple_cmap = LinearSegmentedColormap.from_list("PurpleGradient", colors)
+
+        # Display the matrix
+        cax = ax.imshow(data_masked, cmap=purple_cmap, aspect='auto',
+                        vmin=float(np.nanmin(epidemic_matrix)),
+                        vmax=float(np.nanmax(epidemic_matrix)))
+
+        # Add a color bar
+        cbar_ax = fig.add_axes((1.05, 0.2, 0.03, 0.6))
+        cbar = fig.colorbar(cax, cax=cbar_ax)
+        cbar.ax.tick_params(labelsize=14, colors='purple')
+        cbar.outline.set_visible(True)
+        cbar.outline.set_linewidth(1.5)
+
+        # Additional colorbar aesthetics
+        for tick in cbar.ax.get_yticklabels():
+            tick.set_fontsize(12)
+            tick.set_color('purple')
+
+        # Remove spines for a clean look
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        # Set tick labels for age groups starting from index 0
+        age_labels = self.labels
+        ax.set_xticks(np.arange(self.n_age))
+        ax.set_yticks(np.arange(self.n_age))
+        ax.set_xticklabels(age_labels, rotation=45, ha='center', fontsize=12,
+                           fontweight='bold', color='purple')
+        ax.set_yticklabels(age_labels, fontsize=12, fontweight='bold', color='purple')
+        ax.invert_yaxis()
+        ax.yaxis.tick_right()
+        ax.yaxis.set_label_position("right")
+
+        ax.set_title(plot_title, fontsize=22, pad=25, fontweight='bold', color='purple')
+        # Save the figure
+        os.makedirs(folder, exist_ok=True)
+        save_path = os.path.join(folder, filename)
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        plt.close()
+
+    def _save_results_to_excel(self, results_list, folder, filename):
+        """
+        Saves the results to an Excel file in the same epidemic directory.
+        """
+        # Create a DataFrame from the results list
+        df = pd.DataFrame(results_list)
+        os.makedirs(folder, exist_ok=True)
+
+        # Define the Excel file path and save the DataFrame to it
+        excel_path = os.path.join(folder, filename)
+        df.to_excel(excel_path, index=False)
+
+
+
