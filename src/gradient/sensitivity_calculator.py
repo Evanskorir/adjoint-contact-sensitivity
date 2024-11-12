@@ -2,10 +2,6 @@ from src.gradient.eigen_value_gradient import EigenValueGradient
 from src.comp_graph.cm_creator import CMCreator
 from src.comp_graph.cm_elements_cg_leaf import CMElementsCGLeaf
 from src.gradient.ngm_gradient import NGMGradient
-from src.static.cm_leaf_preparator import CGLeafPreparator
-from src.static.dataloader import DataLoader
-from src.static.eigen_calculator import EigenCalculator
-
 # Import NGMCalculators from different models
 from src.models.chikina.ngm_calculator import NGMCalculator as ChikinaNGMCalculator
 from src.models.moghadas.ngm_calculator import NGMCalculator as MoghadasNGMCalculator
@@ -14,6 +10,10 @@ from src.models.rost.ngm_calculator import NGMCalculator as RostNGMCalculator
 from src.models.italy.ngm_calculator import NGMCalculator as ItalyNGMCalculator
 from src.models.kenya.ngm_calculator import NGMCalculator as KenyaNGMCalculator
 from src.models.british_columbia.ngm_calculator import NGMCalculator as BCNGMCalculator
+# Other imports
+from src.static.cm_leaf_preparator import CGLeafPreparator
+from src.static.dataloader import DataLoader
+from src.static.eigen_calculator import EigenCalculator
 
 
 class SensitivityCalculator:
@@ -138,9 +138,3 @@ class SensitivityCalculator:
                                               dominant_eig_vec=self.eigen_vector)
         eigen_value_grad.run(ngm_small_grads=self.ngm_small_grads)
         self.eigen_value_gradient = eigen_value_grad
-
-
-
-
-
-

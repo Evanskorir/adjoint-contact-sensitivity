@@ -1,4 +1,5 @@
 import torch
+
 from src.models.seir.v_matrix_calculator import VMatrixCalculator
 from src.static.ngm_calculator_base import NGMCalculatorBase
 

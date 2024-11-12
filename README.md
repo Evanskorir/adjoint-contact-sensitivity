@@ -56,9 +56,9 @@ src
  │   ├── rost   
  │   │   ├── ngm_calculator  
  │   │   └── v_matrix_calculator
- │   ├── seir  
- │   │   ├── ngm_calculator  
- │   │   └── v_matrix_calculator
+ │   └── seir  
+ │       ├── ngm_calculator  
+ │       └── v_matrix_calculator
  ├── static 
  │   ├── cm_data  
  │   ├── cm_leaf_preparatory       

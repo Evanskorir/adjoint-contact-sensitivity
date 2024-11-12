@@ -1,4 +1,5 @@
 import torch
+
 from src.static.ngm_calculator_base import NGMCalculatorBase
 from src.models.british_columbia.v_matrix_calculator import VMatrixCalculator
 

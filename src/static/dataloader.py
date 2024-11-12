@@ -1,8 +1,9 @@
 import json
 import os
+
+from gdown import download
 import torch
 import xlrd
-from gdown import download
 
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -33,13 +34,15 @@ class DataLoader:
         self.contact_data = self._get_contact_mtx()
         self.labels = self._get_labels()
 
-    def _create_data_directory(self):
+    @staticmethod
+    def _create_data_directory():
         """Create the data directory if it doesn't exist."""
         data_directory = os.path.join(PROJECT_PATH, "../data")
         if not os.path.exists(data_directory):
             os.makedirs(data_directory)
 
-    def _load_model_config(self):
+    @staticmethod
+    def _load_model_config():
         """Download and load the model configuration file from Google Drive."""
         model_config_url = "https://drive.google.com/uc?id=18ztwRVy4qW2NMs8OKUbkEDS_1rAxpRt0"
         config_file_path = os.path.join(PROJECT_PATH, "../data", "model_config.json")
@@ -109,7 +112,8 @@ class DataLoader:
                             f"{self.model}_{file_type}.json" if
                             file_type == "model_parameters" else f"{self.model}_{file_type}.xls")
 
-    def _download_file(self, file_type, file_id, filename):
+    @staticmethod
+    def _download_file(file_type, file_id, filename):
         """Download a file from Google Drive."""
         if file_type == "age_distribution":
             download(f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=xls",

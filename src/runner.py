@@ -1,5 +1,7 @@
 import os
+
 import torch
+
 from src.gradient.sensitivity_calculator import SensitivityCalculator
 from src.plotter import Plotter
 from src.static.dataloader import DataLoader
@@ -149,6 +151,3 @@ class Runner:
             filename="Grads_tri.pdf",
             folder=scale_folder
         )
-
-
-

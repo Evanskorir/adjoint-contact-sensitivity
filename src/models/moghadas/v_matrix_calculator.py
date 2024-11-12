@@ -1,4 +1,5 @@
 import torch
+
 from src.static.v_matrix_calculator_base import VMatrixCalculatorBase
 
 
@@ -44,4 +45,3 @@ class VMatrixCalculator(VMatrixCalculatorBase):
         v[idx("a_q"), idx("a_q")] = ps["gamma"]
 
         self.v_inv = torch.linalg.inv(v)
-

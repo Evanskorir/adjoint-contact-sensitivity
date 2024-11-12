@@ -1,4 +1,5 @@
 import torch
+
 from src.static.v_matrix_calculator_base import VMatrixCalculatorBase
 
 
@@ -35,4 +36,3 @@ class VMatrixCalculator(VMatrixCalculatorBase):
 
         # Compute the inverse of the V matrix
         self.v_inv = torch.linalg.inv(v)
-
