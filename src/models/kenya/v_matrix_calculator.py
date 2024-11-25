@@ -1,5 +1,4 @@
 import torch
-
 from src.static.v_matrix_calculator_base import VMatrixCalculatorBase
 
 
@@ -27,12 +26,13 @@ class VMatrixCalculator(VMatrixCalculatorBase):
         v[idx("h"), idx("m")] = -self.parameters["kappa_i"]
         # H -> H (hospitalized to hospitalized)
         v[idx("h"), idx("h")] = self.parameters["zeta_i"]
-        # H -> C (hospitalized to critical care)
-        v[idx("c"), idx("h")] = -self.parameters["zeta_i"]
+        # H -> ICU (hospitalized to critical care)
+        v[idx("icu"), idx("h")] = -self.parameters["zeta_i"]
         # C -> H (critical care back to hospitalized)
-        v[idx("h"), idx("c")] = -self.parameters["phi_i"]
+        v[idx("h"), idx("icu")] = -self.parameters["phi_i"]
         # C -> C (critical care to critical care)
-        v[idx("c"), idx("c")] = self.parameters["lambda_i"]
+        v[idx("icu"), idx("icu")] = self.parameters["lambda_i"]
 
         # Compute the inverse of the V matrix
         self.v_inv = torch.linalg.inv(v)
+
