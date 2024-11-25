@@ -1,5 +1,6 @@
 import os
 import torch
+from src.static.cm_data_aggregate import KenyaDataAggregator
 from src.gradient.sensitivity_calculator import SensitivityCalculator
 from src.plotter import Plotter
 from src.static.dataloader import DataLoader
@@ -14,8 +15,15 @@ class Runner:
         """
 
         self.data = data
-        self.population = self.data.age_data
-        self.n_age = len(self.data.age_data)
+        if model == "kenya":
+            self.kenyan_aggregated_data = KenyaDataAggregator(data=data)
+            self.kenyan_aggregated_data.aggregate_kenyan_contact_matrices()
+            self.population = self.kenyan_aggregated_data.age_data
+            self.n_age = len(self.population)
+        else:
+            self.population = self.data.age_data
+            self.n_age = len(self.population)
+
         self.params = self.data.model_parameters_data
         self.model = model
         self.epidemic_model = epidemic_model
@@ -27,9 +35,24 @@ class Runner:
 
         # User-defined parameters
         self.susc_choices = [0.5, 1.0]
-        self.r0_choices = [1.2]
+        self.r0_choices = [1.8]
         # self.scales = ["pop_sum", "contact_sum", "no_scale"]
         self.scales = ["pop_sum"]
+
+    def set_susceptibility(self, susceptibility: torch.Tensor, susc: float):
+        """
+        Set susceptibility values based on the model type.
+        Args:
+            susceptibility (torch.Tensor): Tensor to update with susceptibility values.
+            susc (float): Susceptibility value to apply.
+        """
+        model_age_ranges = {
+            "british_columbia": 3,
+            "rost": 4
+        }
+
+        if self.model in model_age_ranges:
+            susceptibility[:model_age_ranges[self.model]] = susc
 
     def run(self):
         """
@@ -40,7 +63,7 @@ class Runner:
             susceptibility = torch.ones(self.n_age)
             for susc in self.susc_choices:
                 # Update susceptibility values in the model parameters
-                susceptibility[:4] = susc
+                self.set_susceptibility(susceptibility, susc)
                 self.params.update({"susc": susceptibility})
 
                 # Run sensitivity calculation for the current scale and parameters
@@ -90,14 +113,15 @@ class Runner:
             susc (float): susc value used for the simulation.
             base_r0 (float): R0 value used for the simulation.
         """
-        plot = Plotter(data=self.data, n_age=self.n_age)
+        plot = Plotter(data=self.data, n_age=self.n_age, model=self.model)
 
         # Create a model folder for saving specific plots under model, not scale_folder
         model_folder = f"generated/{self.model}"
         os.makedirs(model_folder, exist_ok=True)
 
         # Plot contact matrices
-        plot.plot_contact_matrices(contact_data=self.data.contact_data, model=self.model,
+        plot.plot_contact_matrices(contact_data=self.data.contact_data,
+                                   model=self.model,
                                    filename="contact_matrices")
 
         # Plot contact input matrix and save it under the model folder only (not in scale folder)
@@ -125,7 +149,7 @@ class Runner:
         plot.plot_small_ngm_contact_grad_mtx(
             matrix=self.sensitivity_calc.symmetric_contact_matrix,
             filename="CM.pdf",
-            plot_title="",
+            plot_title="Full contact",
             folder=cm_folder,
             label_axes=False,
             show_colorbar=True
@@ -167,7 +191,6 @@ class Runner:
             plot_title=f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$",
             file_name="epidemics.pdf",
             folder=scale_folder)
-
 
 
 

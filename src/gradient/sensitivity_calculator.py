@@ -1,3 +1,4 @@
+from src.static.cm_data_aggregate import KenyaDataAggregator
 # Imports from the 'src.gradient' package
 from src.gradient.eigen_value_gradient import EigenValueGradient
 from src.gradient.ngm_gradient import NGMGradient
@@ -33,10 +34,18 @@ from src.models.moghadas.model import MoghadasModel
 class SensitivityCalculator:
     def __init__(self, data: DataLoader, model: str, epi_model: str):
         self.susceptibles = None
-        self.data = data
-        self.population = self.data.age_data
-        self.n_age = len(self.data.age_data)
         self.model = model
+        self.data = data
+        if self.model == "kenya":
+            self.kenyan_aggregated_data = KenyaDataAggregator(data=data)
+            self.kenyan_aggregated_data.aggregate_kenyan_contact_matrices()
+            # Set the population to the aggregated age data
+            self.population = self.kenyan_aggregated_data.age_data
+            self.n_age = len(self.population)
+        else:
+            self.population = self.data.age_data
+            self.n_age = len(self.population)
+
         self.epidemic_model = epi_model
 
         # Initialize variables to store calculated values
@@ -94,7 +103,10 @@ class SensitivityCalculator:
         self._calculate_eigenvectors()
 
         # 7. Model simulation and getting their resulting final epidemic size after contact change
-        self.model = EpidemicModelBase(model_data=self.data)
+        if self.model == "kenya":
+            self.model = EpidemicModelBase(model_data=self.kenyan_aggregated_data)
+        else:
+            self.model = EpidemicModelBase(model_data=self.data)
         self._choose_model(epi_model=self.epidemic_model)
         self.susceptibles = self.model.get_initial_values()[self.model.c_idx["s"] *
                                                             self.n_age:(self.model.c_idx["s"] + 1) *
@@ -171,11 +183,12 @@ class SensitivityCalculator:
             "seir": SeirUK,
             "moghadas": MoghadasModel
         }
-
         self.model = model_map.get(epi_model)
-        if not self.model:
-            raise Exception(f"No model was given for {epi_model}!")
-        self.model = self.model(model_data=self.data)
+        if self.epidemic_model == "kenya":
+            self.model = self.model(aggregated_data=self.kenyan_aggregated_data)
+        else:
+            self.model = self.model(model_data=self.data)
+
 
 
 

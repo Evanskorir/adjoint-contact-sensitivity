@@ -1,163 +1,188 @@
 import os
+import torch
 import pandas as pd
-
 import matplotlib
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
-import torch
 matplotlib.use('agg')
 
 
 class Plotter:
-    def __init__(self, data, n_age: int) -> None:
+    def __init__(self, data, n_age: int, model) -> None:
         self.data = data
         self.n_age = n_age
         self.labels = data.labels
 
-        # create data matrix
+        # Create data matrix
         self.create_matrix = np.zeros((self.n_age, self.n_age)) * np.nan
+
+        # Define unique colors for age groups
+        if model in ["rost", "seir"]:
+            self.age_group_colors = [
+                "#FF1493", "#FF4500", "#FF7F00", "#FFA500", "#FFD700", "#ADFF2F",
+                "#32CD32", "#74c476", "#238b45", "#00FA9A", "#00CED1", "#6baed6",
+                "#4682B4", "#4169E1", "#6A5ACD", "#9400D3"
+            ]
+        elif model == "british_columbia":
+            self.age_group_colors = [
+                "#FF1493", "#FF4500", "#FFA500", "#FFD700", "#32CD32",
+                "#238b45", "#00CED1", "#6baed6", "#4169E1", "#9400D3"
+            ]
+        else:
+            self.age_group_colors = [
+                "#FF1493", "#FFD700", "#238b45", "#4169E1"
+                ]
+
+        # Custom reversed blue colormap
+        blue_colors = ["#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b"]
+        self.reversed_blues_cmap = LinearSegmentedColormap.from_list("ReversedBlues",
+                                                                     blue_colors)
+        # Custom reversed green colormap: light green for low values, dark green for high values
+        green_colors = ["#f7fcf5", "#c7e9c0", "#74c476", "#238b45", "#00441b"]
+        self.reversed_greens_cmap = LinearSegmentedColormap.from_list("ReversedGreens",
+                                                                 green_colors)
+
+    def save_figure(self, ax, output_path):
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        plt.savefig(output_path, format="pdf", bbox_inches='tight')
+        plt.close()
+
+    def style_axes(self, ax, label_axes=True, move_labels=False):
+        """Helper function to style axes with colored labels and optional axes labeling."""
+        # Set ticks for the axes, positioned in the center of each grid box
+        ax.set_xticks(np.arange(self.n_age) + 0.5)
+        ax.set_yticks(np.arange(self.n_age) + 0.5)
+
+        # Customize axis labels if label_axes is True
+        if label_axes:
+            ax.set_xticklabels(self.labels, fontsize=14, fontweight='bold',
+                               rotation=90, ha='center')
+            ax.set_yticklabels(self.labels, fontsize=14, fontweight='bold',
+                               rotation=0, va='center')
+        else:
+            ax.set_xticklabels(self.labels, fontsize=15, fontweight='bold',
+                               rotation=45, ha='center')
+            ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold',
+                               ha='center')
+
+        # Apply age-specific color to the tick labels based on the customized color list
+        for tick_label, tick_color in zip(ax.get_xticklabels(), self.age_group_colors):
+            tick_label.set_color(tick_color)
+        for tick_label, tick_color in zip(ax.get_yticklabels(), self.age_group_colors):
+            tick_label.set_color(tick_color)
+
+        # Set the y-ticks rotation to 0 for horizontal alignment
+        plt.yticks(rotation=0)
+
+        # Invert y-axis for better orientation
+        ax.invert_yaxis()
+
+        # Optional: Hide spines to create a cleaner plot
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+    def setup_axes(self, ax, label_axes=True):
+        """
+        Helper method to set up axes with labels and aesthetics.
+        """
+        # Set ticks for the axes
+        ax.set_xticks(np.arange(self.n_age))
+        ax.set_yticks(np.arange(self.n_age))
+
+        # Customize axes based on label_axes flag
+        if label_axes:
+            ax.set_xlabel("Age Infected", fontsize=18, labelpad=15, fontweight='bold',
+                          color='darkgreen')
+            ax.set_ylabel("Age Susceptible", fontsize=18, labelpad=15, fontweight='bold',
+                          color='darkgreen')
+        else:
+            ax.set_xticklabels(self.labels, rotation=45, ha='center', fontsize=15,
+                               fontweight='bold', color='darkblue')
+            ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold',
+                               color='darkblue')
+
+        ax.xaxis.set_ticks_position('bottom')  # Keep ticks at the bottom
+        ax.xaxis.set_tick_params(labeltop=False)  # Hide top labels
+        ax.invert_yaxis()  # Reverse y-axis for better orientation
+
+        # Remove spines for a clean look
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+    def plot_matrix(self, matrix, title, v_min, v_max, output_path, mask=None, annotate=False):
+        """Helper function to plot a single contact matrix."""
+        plt.figure(figsize=(8, 8))
+        ax = sns.heatmap(matrix, cmap=self.reversed_blues_cmap, square=True,
+                         vmin=v_min, vmax=v_max,
+                         annot=annotate, fmt=".1f", mask=mask, cbar=False)
+        ax.set_aspect("equal")
+
+        # Style axes and add title
+        self.style_axes(ax)
+        plt.title(title, fontsize=25, fontweight="bold", color='darkblue')
+
+        # Save the figure
+        self.save_figure(ax, output_path)
 
     def plot_contact_matrices(self, contact_data, filename, model):
         """
-        Plot contact matrices for different settings and save them in a sub-directory.
-        Args:
-            filename (str): The filename prefix for the saved PDF files.
-            model (str): The model for which the matrices are being plotted.
-            contact_data (dict): A dictionary containing contact matrices for different categories.
+        Plot contact matrices for different settings and save them in a subdirectory.
         """
         output_dir = f"generated/{model}/contact_matrices"
         os.makedirs(output_dir, exist_ok=True)
 
-        # Create a custom reversed green colormap
-        colors = ["#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b"]
-        reversed_blues_cmap = LinearSegmentedColormap.from_list("ReversedBlues", colors)
-
         # Calculate the 'Full' contact matrix by summing all matrices except "Full"
-        contact_full = np.array([contact_data[i] for i in contact_data.keys() if i != "Full"]).sum(axis=0)
+        contact_full = np.array([contact_data[i] for i in
+                                 contact_data.keys() if i != "Full"]).sum(axis=0)
         contact_data["Full"] = contact_full
 
         # Determine global v_min and v_max across all contact matrices
-        all_values = np.concatenate([contact_data[contact_type].flatten() for contact_type in contact_data.keys()])
-        v_min = all_values.min()
-        v_max = all_values.max()
+        all_values = np.concatenate([contact_data[contact_type].flatten() for
+                                     contact_type in contact_data.keys()])
+        v_min, v_max = all_values.min(), all_values.max()
 
-        # Set the constant figure size for all plots
-        fig_size = (8, 8)  # Define a uniform figure size
+        # Plot each contact matrix
+        for contact_type, matrix in contact_data.items():
+            output_path = os.path.join(output_dir, f"{filename}_{contact_type}.pdf")
+            self.plot_matrix(pd.DataFrame(matrix), contact_type + " contact", v_min,
+                             v_max, output_path)
 
-        for contact_type in contact_data.keys():
-            # Get the contact matrix for the current type
-            contacts = contact_data[contact_type]
-            contact_matrix = pd.DataFrame(contacts, columns=range(self.n_age), index=range(self.n_age))
-
-            # Create the plot with a constant figure size
-            plt.figure(figsize=fig_size)
-            ax = sns.heatmap(contact_matrix, cmap=reversed_blues_cmap, square=True,
-                             vmin=v_min, vmax=v_max,  # Use global v_min and v_max
-                             annot=False, fmt=".1f",
-                             cbar=False)
-
-            # Set the aspect ratio to be equal for all plots
-            ax.set_aspect("equal")
-
-            # Rotate y tick labels and invert y-axis for correct orientation
-            plt.yticks(rotation=0)
-            ax.invert_yaxis()
-
-            # Set axis labels and improve them with larger font and bold styling
-            ax.set_xticklabels(self.labels, rotation=45, ha='center',
-                               fontsize=15, fontweight='bold', color='darkblue')
-            ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold', color='darkblue')
-
-            # Set the title for each contact type with bold, larger font
-            plt.title(f"{contact_type}", fontsize=25, fontweight="bold",
-                      color='darkblue')
-
-            # Remove spines for a clean look
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['left'].set_visible(False)
-            ax.spines['bottom'].set_visible(False)
-
-            # Save the figure in the appropriate directory
-            plt.savefig(os.path.join(output_dir, f"{filename}_{contact_type}.pdf"),
-                        format="pdf", bbox_inches='tight')
-            plt.close()
-
-        # Create an additional plot for the lower triangular of the "Full" matrix
-            if "Full" in contact_data:
-                # Get the "Full" contact matrix
-                contact_matrix = pd.DataFrame(contact_data["Full"], columns=range(self.n_age), index=range(self.n_age))
-
-                # Create a mask to extract only the lower triangular part (including the diagonal)
-                mask = np.triu(np.ones_like(contact_matrix, dtype=bool))
-
-                # Create the plot with a constant figure size
-                plt.figure(figsize=fig_size)
-                ax = sns.heatmap(contact_matrix, mask=~mask, cmap=reversed_blues_cmap, square=True,
-                                 vmin=v_min, vmax=v_max, annot=True, fmt=".1f", cbar=False)
-
-                # Set the aspect ratio to be equal for all plots
-                ax.set_aspect("equal")
-
-                # Rotate y tick labels and invert y-axis for correct orientation
-                plt.yticks(rotation=0)
-                ax.invert_yaxis()
-
-                # Set axis labels and improve them with larger font and bold styling
-                ax.set_xticklabels(self.labels, rotation=45, ha='center',
-                                   fontsize=12, fontweight='bold', color='darkgreen')
-                ax.set_yticklabels(self.labels, rotation=0, fontsize=12, fontweight='bold',
-                                   color='darkgreen')
-
-                # Move y-axis labels and ticks to the right
-                ax.yaxis.set_label_position("right")
-                ax.yaxis.tick_right()
-
-            # Remove spines for a clean look
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['left'].set_visible(False)
-            ax.spines['bottom'].set_visible(False)
-
-            # Save the figure in the appropriate directory
-            plt.savefig(os.path.join(output_dir, f"{filename}_Full_lower_triangular.pdf"), format="pdf",
-                        bbox_inches='tight')
-            plt.close()
+        # Create a lower triangular plot for the "Full" matrix
+        if "Full" in contact_data:
+            full_matrix = pd.DataFrame(contact_data["Full"])
+            mask = np.triu(np.ones_like(full_matrix, dtype=bool))  # Upper triangular mask
+            output_path = os.path.join(output_dir, f"{filename}_Full_lower_triangular.pdf")
+            self.plot_matrix(full_matrix, "Full (Lower Triangular)", v_min, v_max,
+                             output_path, mask=~mask, annotate=True)
 
     def plot_heatmap(self, data: np.ndarray, plot_title: str, filename: str,
                      folder: str, annotate: bool = True):
         """
-        Method to plot a heatmap with a polished, reversed green colormap, clean layout, and enhanced annotations.
+        Method to plot a heatmap with a polished, reversed green colormap, clean layout,
+        and enhanced annotations.
         """
         # Create a mask for the lower triangular part (excluding the diagonal)
         mask = np.tril(np.ones_like(data, dtype=bool), k=-1)
         data_masked = np.ma.masked_array(data, mask=mask)
-
         fig, ax = plt.subplots(figsize=(8, 8))
 
-        # Custom reversed green colormap: light green for low values, dark green for high values
-        colors = ["#f7fcf5", "#c7e9c0", "#74c476", "#238b45", "#00441b"]
-        reversed_greens_cmap = LinearSegmentedColormap.from_list("ReversedGreens", colors)
-
         # Plot the data with the reversed colormap
-        cax = ax.imshow(data_masked, cmap=reversed_greens_cmap, aspect='auto',
+        cax = ax.imshow(data_masked, cmap=self.reversed_greens_cmap, aspect='auto',
                         vmin=float(np.nanmin(data)),
                         vmax=float(np.nanmax(data)))
-
-        # Colorbar customization
         cbar_ax = fig.add_axes((1.05, 0.2, 0.03, 0.6))  # [left, bottom, width, height]
         cbar = fig.colorbar(cax, cax=cbar_ax)
-        cbar.ax.tick_params(labelsize=14, colors='darkgreen')
+        cbar.ax.tick_params(labelsize=14, colors="darkgreen")
         cbar.outline.set_visible(True)
         cbar.outline.set_linewidth(1.5)
-        # cbar.set_label(fontsize=14, fontweight='bold', color='darkgreen')
 
         # Additional colorbar aesthetics
         for tick in cbar.ax.get_yticklabels():
             tick.set_fontsize(12)
-            tick.set_color('darkgreen')
+            tick.set_color("darkgreen")
 
         # Remove spines for a clean look
         for spine in ax.spines.values():
@@ -261,21 +286,18 @@ class Plotter:
         v_min = ngm_cont_grad.min()  # Minimum value of the matrix
         v_max = ngm_cont_grad.max()  # Maximum value of the matrix
 
-        # Create a custom reversed blue colormap (light blue for low, dark blue for high values)
-        colors = ["#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b"]
-        reversed_blues_cmap = LinearSegmentedColormap.from_list("ReversedBlues", colors)
-
         # Set up the figure and axis
         fig, ax = plt.subplots(figsize=(8, 8))  # Larger figure size for better readability
 
         # Create a heatmap with the reversed green colormap
-        cax = ax.matshow(ngm_cont_grad, cmap=reversed_blues_cmap, aspect='auto',
+        cax = ax.matshow(ngm_cont_grad, cmap=self.reversed_blues_cmap, aspect='auto',
                          vmin=v_min, vmax=v_max)
 
         # Add a color bar if show_colorbar is True
         if show_colorbar:
-            cbar = fig.colorbar(cax, orientation='vertical', shrink=0.8, aspect=40, pad=0.02)
-            cbar.ax.tick_params(labelsize=14)
+            # self.construct_customized_cbar(matrix=ngm_cont_grad, color="darkblue")
+            cbar = fig.colorbar(cax, orientation='vertical', shrink=1.0, aspect=20, pad=0.08)
+            cbar.ax.tick_params(labelsize=4)
             cbar.set_ticks(np.linspace(v_min, v_max, num=5))  # 5 evenly spaced ticks
             cbar.set_ticklabels([f'{tick:.1f}' for tick in np.linspace(v_min, v_max, num=5)])  # Format ticks
             cbar.outline.set_visible(True)
@@ -284,7 +306,7 @@ class Plotter:
 
             # Additional aesthetics for color bar ticks
             for tick in cbar.ax.get_yticklabels():
-                tick.set_fontsize(12)
+                tick.set_fontsize(24)
                 tick.set_color('darkblue')
 
         # Set ticks and labels
@@ -293,24 +315,35 @@ class Plotter:
 
         # Customize axis labels if label_axes is True
         if label_axes:
-            ax.set_xlabel("Age Infected", fontsize=18, labelpad=15, fontweight='bold', color='darkgreen')
-            ax.set_ylabel("Age Susceptible", fontsize=18, labelpad=15, fontweight='bold', color='darkgreen')
-            ax.set_xticklabels(self.labels, rotation=45, ha='center', fontsize=12, fontweight='bold', color='darkgreen')
-            ax.set_yticklabels(self.labels, fontsize=12, fontweight='bold', color='darkgreen')
+            ax.set_xlabel("Age Infected", fontsize=18, labelpad=15,
+                          fontweight='bold', color='darkgreen')
+            ax.set_ylabel("Age Susceptible", fontsize=18, labelpad=15,
+                          fontweight='bold', color='darkgreen')
+            ax.set_xticklabels(self.labels, rotation=90, ha='center',
+                               fontsize=12, fontweight='bold', color='darkgreen')
+            ax.set_yticklabels(self.labels, fontsize=12,
+                               fontweight='bold', color='darkgreen')
 
             # Hide the top x-axis and y-axis tick labels
             ax.xaxis.set_ticks_position('bottom')  # Keep ticks at the bottom
             ax.xaxis.set_tick_params(labeltop=False)  # Hide top labels
         else:
-            ax.set_xticklabels(self.labels, rotation=45, ha='center', fontsize=15, fontweight='bold', color='darkblue')
-            ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold', color='darkblue')
+            ax.set_xticklabels(self.labels, rotation=90, ha='center',
+                               fontsize=15, fontweight='bold', color='darkblue')
+            ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold',
+                               color='darkblue')
             ax.xaxis.set_ticks_position('bottom')
             ax.xaxis.set_tick_params(labeltop=False)
 
-        # Add a bold title with dark green color
-        ax.set_title(plot_title, fontsize=22, pad=25, fontweight='bold', color='darkgreen')
+            for tick_label, tick_color in zip(ax.get_xticklabels(), self.age_group_colors):
+                tick_label.set_color(tick_color)
+            for tick_label, tick_color in zip(ax.get_yticklabels(), self.age_group_colors):
+                tick_label.set_color(tick_color)
 
-        # Invert y-axis for correct orientation (optional depending on the desired orientation)
+        # Add a bold title with dark green color
+        ax.set_title(plot_title, fontsize=25, fontweight='bold',
+                     color='darkblue')
+
         ax.invert_yaxis()
 
         # Remove unnecessary spines for a clean look
@@ -438,17 +471,26 @@ class Plotter:
         with a modified contact matrix and stores the result in an Excel file,
         along with saving individual plots for each combination.
         """
-        # Define a consistent directory for all outputs based on model_type
-        # folder = os.path.join("generated", model_type, "epidemic")
-        os.makedirs(folder, exist_ok=True)
 
+        os.makedirs(folder, exist_ok=True)
         if not isinstance(ratio, list):
             ratio = [ratio]
 
         results_list = []
         init_values = model.get_initial_values()
 
-        # Set up colormap to select colors dynamically
+        baseline_solution = model.get_solution(
+            init_values=init_values,
+            t=time,
+            parameters=params,
+            cm=cm_list[0]  # Original contact matrix
+        )
+        baseline_c = model.aggregate_by_age(
+            solution=baseline_solution,
+            idx=model.c_idx["c"]
+        )
+        baseline_n_infected_max = baseline_c.max()
+
         cmap = plt.get_cmap('Purples')
         color_range = len(cm_list) * len(ratio)
 
@@ -463,31 +505,34 @@ class Plotter:
                     cm=c_matrix
                 )
                 if model_type in ["rost", "seir", "british_columbia", "kenya"]:
-                    total_infecteds = model.aggregate_by_age(
-                        solution=solution,
-                        idx=model.c_idx["c"])
+                    total_infecteds = model.aggregate_by_age(solution=solution,
+                                                             idx=model.c_idx["c"])
                 elif model_type == "moghadas":
-                    total_infecteds = model.aggregate_by_age(
-                        solution=solution,
-                        idx=model.c_idx["i"])
+                    total_infecteds = model.aggregate_by_age(solution=solution,
+                                                             idx=model.c_idx["i"])
                 elif model_type == "chikina":
-                    total_infecteds = model.aggregate_by_age(
-                        solution=solution,
-                        idx=model.c_idx["inf"])
+                    total_infecteds = model.aggregate_by_age(solution=solution,
+                                                             idx=model.c_idx["inf"])
                 else:
                     raise Exception("Invalid model")
 
-                # Only take the maximum value (epidemic size) for the current modification
                 n_infected_max = total_infecteds.max()
 
-                result_entry = {
-                    'susc': susc,
-                    'base_r0': base_r0,
-                    'ratio': r,
-                    'n_infected_max': n_infected_max,
-                    'contact_matrix_legend': legend
-                }
-                results_list.append(result_entry)
+                # Normalize the peak epidemic size by dividing by the baseline max and subtract from 1
+                normalized_peak = 1 - (n_infected_max / baseline_n_infected_max)
+
+                # Capture cumulative infected data over time
+                for t, infected in zip(time, total_infecteds):
+                    result_entry = {
+                        'susc': susc,
+                        'base_r0': base_r0,
+                        'ratio': r,
+                        'n_infected_max': n_infected_max,
+                        'normalized_peak': normalized_peak,
+                        'time': t,
+                        'contact_matrix_legend': legend
+                    }
+                    results_list.append(result_entry)
 
                 # Generate color from colormap based on index
                 color = cmap((idx * len(ratio) + r_idx) / color_range)
@@ -516,22 +561,21 @@ class Plotter:
     def plot_lower_triangular_epidemic_size(self, results_list, folder,
                                             filename, plot_title):
         """
-        Creates a lower triangular plot for epidemic sizes, including diagonals
-        and values in all rows.
+        Creates a lower triangular plot for normalized epidemic sizes,
+        including diagonals and values in all rows.
         """
         # Initialize the epidemic matrix with NaNs
         n_age = self.n_age
         epidemic_matrix = np.full((n_age, n_age), np.nan)
 
-        # Populate the epidemic_matrix based on results_list data
         for result in results_list:
             legend = result['contact_matrix_legend']
-            n_infected_max = result['n_infected_max']
+            normalized_peak = result['normalized_peak']
 
             if "reduction at diagonal indices" in legend:
                 # Handle diagonal reductions
                 index = int(legend.split("(")[1].split(")")[0])
-                epidemic_matrix[index, index] = n_infected_max
+                epidemic_matrix[index, index] = normalized_peak
             elif "reduction between indices" in legend:
                 # Parse indices for off-diagonal reductions
                 indices = legend.split("(")[1].split(")")[0].split(", ")
@@ -539,7 +583,7 @@ class Plotter:
 
                 # Ensure lower triangular population including the diagonal
                 epidemic_matrix[max(row_idx, col_idx),
-                                min(row_idx, col_idx)] = n_infected_max
+                                min(row_idx, col_idx)] = normalized_peak
 
         # Transpose for correct orientation
         epidemic_matrix = epidemic_matrix.T
@@ -588,23 +632,9 @@ class Plotter:
         ax.yaxis.set_label_position("right")
 
         ax.set_title(plot_title, fontsize=22, pad=25, fontweight='bold', color='purple')
+
         # Save the figure
         os.makedirs(folder, exist_ok=True)
         save_path = os.path.join(folder, filename)
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
         plt.close()
-
-    def _save_results_to_excel(self, results_list, folder, filename):
-        """
-        Saves the results to an Excel file in the same epidemic directory.
-        """
-        # Create a DataFrame from the results list
-        df = pd.DataFrame(results_list)
-        os.makedirs(folder, exist_ok=True)
-
-        # Define the Excel file path and save the DataFrame to it
-        excel_path = os.path.join(folder, filename)
-        df.to_excel(excel_path, index=False)
-
-
-

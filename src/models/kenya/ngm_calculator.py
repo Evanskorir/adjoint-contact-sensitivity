@@ -21,8 +21,7 @@ class NGMCalculator(NGMCalculatorBase):
         inf_a = self.parameters["inf_a"] if "inf_a" in self.parameters.keys() else 0.7
         inf_m = self.parameters["inf_m"] if "inf_m" in self.parameters.keys() else 0.7
 
-        susc_vec = self.parameters["susc"].reshape((-1, 1))
-        f[i["e"]:s_mtx:n_states, i["a"]:s_mtx:n_states] = inf_a * contact_mtx.T * susc_vec
-        f[i["e"]:s_mtx:n_states, i["m"]:s_mtx:n_states] = inf_m * contact_mtx.T * susc_vec
+        f[i["e"]:s_mtx:n_states, i["a"]:s_mtx:n_states] = inf_a * contact_mtx.T
+        f[i["e"]:s_mtx:n_states, i["m"]:s_mtx:n_states] = inf_m * contact_mtx.T
 
         return f

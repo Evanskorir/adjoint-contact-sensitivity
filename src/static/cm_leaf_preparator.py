@@ -33,7 +33,11 @@ class CGLeafPreparator:
         Args: contact_matrix (torch.Tensor): The contact matrix to transform.
         Returns: torch.Tensor: The transformed and symmetrized contact matrix.
         """
-        age_distribution = self.data.age_data.reshape((-1, 1))  # (16, 1) column vector
+        if self.model == "kenya":
+            age_distribution = self.cm_data.aggregated_age_data.reshape((-1, 1))  # (4, 1)
+        else:
+            age_distribution = self.data.age_data.reshape((-1, 1))  # (16, 1) column vector
+
         symmetrized_orig_total_cm = ((contact_matrix * age_distribution) +
                                      (contact_matrix * age_distribution).T
                                     ) / 2

@@ -9,7 +9,7 @@ class RostModelHungary(EpidemicModelBase):
                         "ip", "ia1", "ia2", "ia3",
                         "is1", "is2", "is3",
                         "ih", "ic", "icr",
-                        "r", "d", "c", "hosp", "icu"]
+                        "r", "d", "c"]
         super().__init__(model_data=model_data, compartments=compartments)
 
     def update_initial_values(self, iv: dict):
@@ -17,25 +17,23 @@ class RostModelHungary(EpidemicModelBase):
         iv.update({"c": iv["ip"] + iv["ia1"] + iv["ia2"] + iv["ia3"] + iv["is1"] +
                    iv["is2"] + iv["is3"] + iv["r"] + iv["d"]
                    })
+
         iv.update({"s": self.population - (iv["c"] + iv["l1"] + iv["l2"])})
 
     def get_model(self, xs: np.ndarray, _, ps: dict, cm: np.ndarray) -> np.ndarray:
-        # Ensure ps and cm are converted from tensors
-        ps = {key: val.numpy() if isinstance(val, torch.Tensor) else
-        val for key, val in ps.items()}
+        ps = {key: val.numpy() if isinstance(val, torch.Tensor) else val for key,
+                                                                             val in ps.items()}
         cm = cm.numpy() if isinstance(cm, torch.Tensor) else cm
 
-        # Extract compartments
         s, l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr, \
-            r, d, c, hosp, icu = xs.reshape(-1, self.n_age)
+            r, d, c = xs.reshape(-1, self.n_age)
 
-        # Calculate transmission term
-        transmission = ps["beta"] * np.array((ip + ps["inf_a"] * (ia1 + ia2 + ia3) + (is1 + is2 + is3))).dot(cm)
+        transmission = ps["beta"] * np.array((ip + ps["inf_a"] * (ia1 + ia2 + ia3) +
+                                              (is1 + is2 + is3))).dot(cm)
         actual_population = np.array(self.population)
 
         susc = np.array(ps["susc"])
 
-        # Define model equations
         model_eq_dict = {
             "s": -susc * (s / actual_population) * transmission,
             "l1": susc * (s / actual_population) * transmission - 2 * ps["alpha_l"] * l1,
@@ -50,13 +48,12 @@ class RostModelHungary(EpidemicModelBase):
             "ih": ps["h"] * (1 - ps["xi"]) * 3 * ps["gamma_s"] * is3 - ps["gamma_h"] * ih,
             "ic": ps["h"] * ps["xi"] * 3 * ps["gamma_s"] * is3 - ps["gamma_c"] * ic,
             "icr": (1 - ps["mu"]) * ps["gamma_c"] * ic - ps["gamma_cr"] * icr,
-            "r": 3 * ps["gamma_a"] * ia3 + (1 - ps["h"]) * 3 * ps["gamma_s"] * is3 + ps["gamma_h"] * ih +
+            "r": 3 * ps["gamma_a"] * ia3 + (1 - ps["h"]) * 3 * ps["gamma_s"] * is3 +
+                 ps["gamma_h"] * ih +
             ps["gamma_cr"] * icr,
             "d": ps["mu"] * ps["gamma_c"] * ic,
-            "c": 2 * ps["alpha_l"] * l2,
-            "hosp": ps["h"] * (1 - ps["xi"]) * 3 * ps["gamma_s"] * is3 +
-                     ps["h"] * ps["xi"] * 3 * ps["gamma_s"] * is3,
-            "icu": ps["h"] * ps["xi"] * 3 * ps["gamma_s"] * is3
+            # Update cumulative cases
+            "c": 2 * ps["alpha_l"] * l2
         }
         return self.get_array_from_dict(comp_dict=model_eq_dict)
 

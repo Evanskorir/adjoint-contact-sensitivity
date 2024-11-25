@@ -10,11 +10,11 @@ class BCModel(EpidemicModelBase):
         super().__init__(model_data=model_data, compartments=compartments)
 
     def update_initial_values(self, iv: dict):
-        iv["i1"][3] = 1
-        iv.update({"e1": iv["e1"], "r": iv["r"]})
+        iv["e2"][2] = 1
+        iv.update({"c": iv["e1"] + iv["i1"] + iv["i2"] + iv["r"]
+                   })
 
-        iv.update({"s": self.population - (iv["e1"] + iv["e2"] + iv["i1"] + iv["i2"] +
-                                           iv["r"] + iv["c"])})
+        iv.update({"s": self.population - (iv["c"] + iv["e2"])})
 
     def get_model(self, xs: np.ndarray, t, ps: dict, cm: np.ndarray) -> np.ndarray:
         # the same order as in self.compartments!
@@ -40,6 +40,9 @@ class BCModel(EpidemicModelBase):
         }
         return self.get_array_from_dict(comp_dict=model_eq_dict)
 
-    def get_recovered(self, solution) -> np.ndarray:
+    def get_recovered(self, solution: np.ndarray) -> np.ndarray:
+        """
+        Return the total number of recovered individuals.
+        """
         idx = self.c_idx["r"]
         return self.aggregate_by_age(solution, idx)

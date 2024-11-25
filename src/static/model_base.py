@@ -3,10 +3,14 @@ from scipy.integrate import odeint
 
 
 class EpidemicModelBase:
-    def __init__(self, model_data=None, compartments=None) -> None:
+    def __init__(self, model_data=None, compartments=None, model=None) -> None:
         if compartments is None:
             compartments = []
-        self.population = model_data.age_data.flatten()
+        # self.population = model_data.age_data.flatten()
+        if model == "kenya":
+            self.population = model_data.aggregated_age_data
+        else:
+            self.population = model_data.age_data.flatten()
         self.compartments = compartments
         self.c_idx = {comp: idx for idx, comp in enumerate(self.compartments)}
         self.n_age = self.population.shape[0]

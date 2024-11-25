@@ -22,7 +22,7 @@ class ContactManipulation:
             self.params = params.detach().cpu().numpy()
         else:
             self.params = params
-        self.plotter = Plotter(data=self.data, n_age=self.n_age)
+        self.plotter = Plotter(data=self.data, n_age=self.n_age, model=self.model)
 
     def run_plots(self, folder, file_name, plot_title):
         cm_list_orig = []
@@ -31,11 +31,11 @@ class ContactManipulation:
 
         # Define time range based on model type
         if self.model_type in ["rost", "seir"]:
-            t = np.arange(0, 1200, 0.5)
+            t = np.arange(0, 800, 0.5)
         elif self.model_type in ["chikina", "british_columbia"]:
-            t = np.arange(0, 2500, 0.5)
-        else:
             t = np.arange(0, 500, 0.5)
+        else:
+            t = np.arange(0, 200, 0.5)
 
         # Define ratio and initialize lists
         ratio = [0.5]  # 50% element wise contact reduction
