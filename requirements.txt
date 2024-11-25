@@ -22,8 +22,8 @@ torch~=2.2.2
 typing_extensions==4.12.2
 xlrd==2.0.1
 zipp==3.19.2
-
-pandas~=2.1.4
+pandas==2.2.3
 seaborn~=0.13.2
+sklearn~=0.0
 scikit-learn~=1.4.2
 gdown~=5.2.0
