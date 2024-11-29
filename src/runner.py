@@ -34,7 +34,7 @@ class Runner:
         self.r0_cm_grad = None
 
         # User-defined parameters
-        self.susc_choices = [0.5, 1.0]
+        self.susc_choices = [0.5]
         self.r0_choices = [1.8]
         # self.scales = ["pop_sum", "contact_sum", "no_scale"]
         self.scales = ["pop_sum"]

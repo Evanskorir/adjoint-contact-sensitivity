@@ -18,23 +18,6 @@ class Plotter:
         # Create data matrix
         self.create_matrix = np.zeros((self.n_age, self.n_age)) * np.nan
 
-        # Define unique colors for age groups
-        if model in ["rost", "seir"]:
-            self.age_group_colors = [
-                "#FF1493", "#FF4500", "#FF7F00", "#FFA500", "#FFD700", "#ADFF2F",
-                "#32CD32", "#74c476", "#238b45", "#00FA9A", "#00CED1", "#6baed6",
-                "#4682B4", "#4169E1", "#6A5ACD", "#9400D3"
-            ]
-        elif model == "british_columbia":
-            self.age_group_colors = [
-                "#FF1493", "#FF4500", "#FFA500", "#FFD700", "#32CD32",
-                "#238b45", "#00CED1", "#6baed6", "#4169E1", "#9400D3"
-            ]
-        else:
-            self.age_group_colors = [
-                "#FF1493", "#FFD700", "#238b45", "#4169E1"
-                ]
-
         # Custom reversed blue colormap
         blue_colors = ["#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b"]
         self.reversed_blues_cmap = LinearSegmentedColormap.from_list("ReversedBlues",
@@ -51,28 +34,27 @@ class Plotter:
         plt.close()
 
     def style_axes(self, ax, label_axes=True, move_labels=False):
-        """Helper function to style axes with colored labels and optional axes labeling."""
-        # Set ticks for the axes, positioned in the center of each grid box
         ax.set_xticks(np.arange(self.n_age) + 0.5)
         ax.set_yticks(np.arange(self.n_age) + 0.5)
 
-        # Customize axis labels if label_axes is True
+        # Customize axis labels
         if label_axes:
-            ax.set_xticklabels(self.labels, fontsize=14, fontweight='bold',
-                               rotation=90, ha='center')
-            ax.set_yticklabels(self.labels, fontsize=14, fontweight='bold',
-                               rotation=0, va='center')
-        else:
-            ax.set_xticklabels(self.labels, fontsize=15, fontweight='bold',
-                               rotation=45, ha='center')
-            ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold',
-                               ha='center')
+            xtick_labels = [label if i % 2 == 0 else "" for i,
+                                                            label in enumerate(self.labels)
+            ]
+            y_tick_labels = [label if i % 2 == 0 else "" for i,
+                                                             label in enumerate(self.labels)
+            ]
 
-        # Apply age-specific color to the tick labels based on the customized color list
-        for tick_label, tick_color in zip(ax.get_xticklabels(), self.age_group_colors):
-            tick_label.set_color(tick_color)
-        for tick_label, tick_color in zip(ax.get_yticklabels(), self.age_group_colors):
-            tick_label.set_color(tick_color)
+            ax.set_xticklabels(xtick_labels, fontsize=20, fontweight='bold',
+                               rotation=90, ha='center', color='darkblue')
+            ax.set_yticklabels(y_tick_labels, fontsize=20, fontweight='bold',
+                               rotation=0, va='center', color='darkblue')
+        else:
+            ax.set_xticklabels(self.labels, fontsize=20, fontweight='bold',
+                               rotation=45, ha='center', color='darkblue')
+            ax.set_yticklabels(self.labels, fontsize=20, fontweight='bold',
+                               ha='center', color='darkblue')
 
         # Set the y-ticks rotation to 0 for horizontal alignment
         plt.yticks(rotation=0)
@@ -80,7 +62,7 @@ class Plotter:
         # Invert y-axis for better orientation
         ax.invert_yaxis()
 
-        # Optional: Hide spines to create a cleaner plot
+        # Hide spines for a cleaner plot
         for spine in ax.spines.values():
             spine.set_visible(False)
 
@@ -112,7 +94,8 @@ class Plotter:
         for spine in ax.spines.values():
             spine.set_visible(False)
 
-    def plot_matrix(self, matrix, title, v_min, v_max, output_path, mask=None, annotate=False):
+    def plot_matrix(self, matrix, title, v_min, v_max, output_path, mask=None,
+                    annotate=False):
         """Helper function to plot a single contact matrix."""
         plt.figure(figsize=(8, 8))
         ax = sns.heatmap(matrix, cmap=self.reversed_blues_cmap, square=True,
@@ -193,18 +176,19 @@ class Plotter:
         ax.set_yticks(np.arange(self.n_age))
 
         # Set the x-axis labels (horizontal) at the bottom with bold green formatting
-        ax.set_xticklabels(self.labels, rotation=45, ha='center',
-                           fontsize=14, fontweight='bold', color='darkgreen')
+        ax.set_xticklabels(self.labels, rotation=90, ha='center',
+                           fontsize=15, fontweight='bold', color='darkgreen')
 
         # Set the y-axis labels (vertical) on the right side with bold green formatting
-        ax.set_yticklabels(self.labels, fontsize=14, fontweight='bold', color='darkgreen')
+        ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold', color='darkgreen')
 
         # Move y-axis labels to the right side and ensure alignment with grid boxes
         ax.yaxis.set_label_position('right')
         ax.yaxis.tick_right()
 
         # Add axis labels and title with enhanced fonts
-        ax.set_title(plot_title, fontsize=24, pad=20, fontweight='bold', color='darkgreen')
+        ax.set_title(plot_title, fontsize=22, pad=20, fontweight='bold',
+                     color='darkgreen')
 
         # Optionally annotate heatmap cells with the values
         if annotate:
@@ -268,7 +252,8 @@ class Plotter:
 
     def plot_small_ngm_contact_grad_mtx(self, matrix: torch.Tensor, plot_title: str,
                                         filename: str, folder: str,
-                                        label_axes: bool = True, show_colorbar: bool = True):
+                                        label_axes: bool = True,
+                                        show_colorbar: bool = True):
         """
         Plot the matrix as a heatmap with improved aesthetics, using a custom reversed green colormap.
 
@@ -295,54 +280,48 @@ class Plotter:
 
         # Add a color bar if show_colorbar is True
         if show_colorbar:
-            # self.construct_customized_cbar(matrix=ngm_cont_grad, color="darkblue")
-            cbar = fig.colorbar(cax, orientation='vertical', shrink=1.0, aspect=20, pad=0.08)
+            cbar = fig.colorbar(cax, orientation='vertical', shrink=1.0,
+                                aspect=20, pad=0.08)
             cbar.ax.tick_params(labelsize=4)
             cbar.set_ticks(np.linspace(v_min, v_max, num=5))  # 5 evenly spaced ticks
-            cbar.set_ticklabels([f'{tick:.1f}' for tick in np.linspace(v_min, v_max, num=5)])  # Format ticks
+            cbar.set_ticklabels([f'{tick:.1f}' for tick in np.linspace(v_min,
+                                                                       v_max, num=5)])
             cbar.outline.set_visible(True)
+
             cbar.outline.set_linewidth(1.5)
             cbar.set_alpha(1.0)
 
-            # Additional aesthetics for color bar ticks
             for tick in cbar.ax.get_yticklabels():
                 tick.set_fontsize(24)
                 tick.set_color('darkblue')
 
-        # Set ticks and labels
+        # Set ticks
         ax.set_xticks(np.arange(self.n_age))  # Position ticks at the centers of the columns
         ax.set_yticks(np.arange(self.n_age))
 
-        # Customize axis labels if label_axes is True
+        # Generate labels with skipping
+        xtick_labels = [label if i % 2 == 0 else "" for i, label in enumerate(self.labels)]
+        y_tick_labels = [label if i % 2 == 0 else "" for i, label in enumerate(self.labels)]
+
+        # Apply the labels
+        ax.set_xticklabels(xtick_labels, rotation=90, ha='center', fontsize=20,
+                           fontweight='bold', color='darkblue')
+        ax.set_yticklabels(y_tick_labels, fontsize=20, fontweight='bold',
+                           color='darkblue')
+
+        # Ensure labels appear only on the bottom x-axis
+        ax.xaxis.set_ticks_position('bottom')  # Position ticks at the bottom
+        ax.xaxis.set_tick_params(labeltop=False)  # Disable top x-axis labels
+
+        # Customize axes labels if label_axes is True
         if label_axes:
-            ax.set_xlabel("Age Infected", fontsize=18, labelpad=15,
+            ax.set_xlabel("Age Infected", fontsize=20, labelpad=15,
                           fontweight='bold', color='darkgreen')
-            ax.set_ylabel("Age Susceptible", fontsize=18, labelpad=15,
+            ax.set_ylabel("Age Susceptible", fontsize=20, labelpad=15,
                           fontweight='bold', color='darkgreen')
-            ax.set_xticklabels(self.labels, rotation=90, ha='center',
-                               fontsize=12, fontweight='bold', color='darkgreen')
-            ax.set_yticklabels(self.labels, fontsize=12,
-                               fontweight='bold', color='darkgreen')
 
-            # Hide the top x-axis and y-axis tick labels
-            ax.xaxis.set_ticks_position('bottom')  # Keep ticks at the bottom
-            ax.xaxis.set_tick_params(labeltop=False)  # Hide top labels
-        else:
-            ax.set_xticklabels(self.labels, rotation=90, ha='center',
-                               fontsize=15, fontweight='bold', color='darkblue')
-            ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold',
-                               color='darkblue')
-            ax.xaxis.set_ticks_position('bottom')
-            ax.xaxis.set_tick_params(labeltop=False)
-
-            for tick_label, tick_color in zip(ax.get_xticklabels(), self.age_group_colors):
-                tick_label.set_color(tick_color)
-            for tick_label, tick_color in zip(ax.get_yticklabels(), self.age_group_colors):
-                tick_label.set_color(tick_color)
-
-        # Add a bold title with dark green color
-        ax.set_title(plot_title, fontsize=25, fontweight='bold',
-                     color='darkblue')
+        # Add a bold title
+        ax.set_title(plot_title, fontsize=25, fontweight='bold', color='darkblue')
 
         ax.invert_yaxis()
 
@@ -624,14 +603,14 @@ class Plotter:
         age_labels = self.labels
         ax.set_xticks(np.arange(self.n_age))
         ax.set_yticks(np.arange(self.n_age))
-        ax.set_xticklabels(age_labels, rotation=45, ha='center', fontsize=12,
+        ax.set_xticklabels(age_labels, rotation=90, ha='center', fontsize=15,
                            fontweight='bold', color='purple')
-        ax.set_yticklabels(age_labels, fontsize=12, fontweight='bold', color='purple')
+        ax.set_yticklabels(age_labels, fontsize=15, fontweight='bold', color='purple')
         ax.invert_yaxis()
         ax.yaxis.tick_right()
         ax.yaxis.set_label_position("right")
 
-        ax.set_title(plot_title, fontsize=22, pad=25, fontweight='bold', color='purple')
+        ax.set_title(plot_title, fontsize=22, pad=20, fontweight='bold', color='purple')
 
         # Save the figure
         os.makedirs(folder, exist_ok=True)
