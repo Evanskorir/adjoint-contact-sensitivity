@@ -1,5 +1,4 @@
 import torch
-
 from src.static.v_matrix_calculator_base import VMatrixCalculatorBase
 
 
