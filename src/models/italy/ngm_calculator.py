@@ -1,5 +1,4 @@
 import torch
-
 from src.models.italy.v_matrix_calculator import VMatrixCalculator
 from src.static.ngm_calculator_base import NGMCalculatorBase
 
