@@ -26,10 +26,11 @@ class Plotter:
                                                                      blue_colors)
         # Custom reversed green colormap: light green for low values, dark green for high values
         green_colors = ["#f7fcf5", "#c7e9c0", "#74c476", "#238b45", "#00441b"]
-        self.reversed_greens_cmap = LinearSegmentedColormap.from_list("ReversedGreens",
-                                                                 green_colors)
+        self.reversed_greens_cmap = LinearSegmentedColormap.from_list(
+            "ReversedGreens", green_colors)
 
-    def save_figure(self, ax, output_path):
+    @staticmethod
+    def save_figure(ax, output_path):
         for spine in ax.spines.values():
             spine.set_visible(False)
         plt.savefig(output_path, format="pdf", bbox_inches='tight')
@@ -444,7 +445,8 @@ class Plotter:
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
         plt.close()
 
-    def plot_epidemic_peak_and_size(self, time, cm_list, legend_list,
+    @staticmethod
+    def plot_epidemic_peak_and_size(time, cm_list, legend_list,
                                     ratio, model, params,
                                     filename, model_type, folder,
                                     susc: float, base_r0: float):
