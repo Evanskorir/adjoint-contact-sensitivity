@@ -38,35 +38,44 @@ src
  │   ├── ngm_gradient  
  │   └── sensitivity_calculator
  ├── models       
- │   ├── british_columbia   
+ │   ├── british_columbia 
+ │   │   ├── model 
  │   │   ├── ngm_calculator  
  │   │   └── v_matrix_calculator
- │   ├── chikina   
+ │   ├── chikina 
+ │   │   ├── model
  │   │   ├── ngm_calculator  
  │   │   └── v_matrix_calculator
  │   ├── italy   
  │   │   ├── ngm_calculator  
  │   │   └── v_matrix_calculator
- │   ├── kenya   
+ │   ├── kenya 
+ │   │   ├── model
  │   │   ├── ngm_calculator  
  │   │   └── v_matrix_calculator
- │   ├── moghadas   
+ │   ├── moghadas
+ │   │   ├── model
  │   │   ├── ngm_calculator  
  │   │   └── v_matrix_calculator
- │   ├── rost   
+ │   ├── rost
+ │   │   ├── model
  │   │   ├── ngm_calculator  
  │   │   └── v_matrix_calculator
- │   └── seir  
+ │   └── seir 
+ │       ├── model
  │       ├── ngm_calculator  
  │       └── v_matrix_calculator
  ├── static 
- │   ├── cm_data  
+ │   ├── cm_data 
+ │   ├── cm_data_aggregate_kenya
  │   ├── cm_leaf_preparatory       
  │   ├── dataloader    
  │   ├── e_matrix_calculator  
- │   ├── eigen_calculator       
+ │   ├── eigen_calculator 
+ │   ├── model_base   
  │   ├── ngm_calculator_base  
  │   └── v_matrix_calculator_base
+ ├── contact_manipulation  
  ├── plotter               
  └── runner
 main 
@@ -88,20 +97,24 @@ elements.
 contact matrix, and computes both the eigenvalue and gradient.
 
 #### `src/models/`
+- **`model.py`**: Implements the model equations for each model  
 - **`ngm_calculator.py`**: Computes the NGM with small domain for each model assuming susceptibility values of [0.5, 1.0].
 - **`v_matrix_calculator.py`**: Constructs and inverts a transition matrix based on given parameters for each model.
 
 #### `src/static/`
 - **`cm_data.py`**: Loads and calculates the sum of contact matrices in different settings from the `dataloader.py`.
+- **`cm_data_aggregate_kenya.py`**: Loads the data corresponding to kenya model and aggregates it into 4 age groups
 - **`cm_leaf_preparatory.py`**: Transforms the given full contact matrix obtained from the `cm_data.py`.
 - **`dataloader.py`**: Designed to load and preprocess data required for the project.
 - **`e_matrix_calculator.py`**: Designed to create a block diagonal matrix with specific properties.
 - **`eigen_calculator.py`**: Computes the dominant eigenvalue and the corresponding eigenvector of the NGM with 
 small domain matrix.
+- **`model_base.py`**: Base class for implementing the model equations
 - **`ngm_calculator_base.py`**: Base class for computing the NGM with small domain for each model.
 - **`v_matrix_calculator_base.py`**: Base class for constructing and inverting a transition matrix based on given parameters.
 
 #### `src/`
+- **`contact_manipulation.py`**: changes the contact of age group pair by 50% and monitors its impact on the final epidemic size.
 - **`plotter.py`**: Generates a triangular heatmap to visualize contact inputs. It also plots a heatmap of a given 
 matrix and reconstructs a symmetric matrix from the gradient values, which are initially represented as 
 just the upper triangular elements.
@@ -115,31 +128,32 @@ run the simulations.
 To run the simulation, follow these steps:
 1. Open `main.py` and configure the simulation parameters. 
 2. Run the simulation with these steps:
+#### Specify the model for the simulation e.g
+model = "rost" 
 #### Load the necessary data for the simulation
-data = DataLoader()  
+data = DataLoader(model=model)  
 #### Initialize the Runner with the loaded data
-runner = Runner(data=data)  
+runner = Runner(data=data, model=model, epidemic_model=model)  
 #### Start the simulation
 runner.run()  
 
 ## Output
 
 ```
-generated
-│    └── model
-│    │    └── age_group_bar
-│    │    │   ├── age_group_bar
-│    │    └── CM
-│    │    │   ├── CM.pdf # Visualizes the symmetric contact input as matrix using the selected scaling.    
-│    │    └── contact_input
-│    │    │   ├── contact_input.pdf # Visualizes the transformed contact input using the selected scaling.
-│    │    └── contact_matrices
-│    │    │   ├── contact_matrices.pdf # Visualizes the contact matrices at Home, School, Work, Other, and Full.
-│    │    └── Next Generation Matrix
-│    │    │   ├── ngm_heatmap.pdf # Visualizes the ngm matrices for susceptibility 0.5 and 1.0.
-│    │    └── results_base_r0_susc
-│    │    │   └── Grads_tri.pdf # Shows the gradients with different base R0s and susc as upper tri elements.
-
+generated/model
+    ├── age_group_bar
+    │   └── age_group_bar
+    ├── CM
+    │   └── CM.pdf # Visualizes the symmetric contact input as matrix using the selected scaling.    
+    ├── contact_input
+    │   └── contact_input.pdf # Visualizes the transformed contact input using the selected scaling.
+    ├── contact_matrices
+    │   └── contact_matrices.pdf # Visualizes the contact matrices at Home, School, Work, Other, and Full.
+    ├── Next Generation Matrix
+    │   └── ngm_heatmap.pdf # Visualizes the ngm matrices for susceptibility 0.5 and 1.0.           
+    └── results_base_r0_susc
+        ├──   epidemic.pdf # Shows the validation heatmap
+        └──  Grads_tri.pdf # Shows the gradients with different base R0s and susc as lower tri elements.
 ```
 
 ## Requirement
