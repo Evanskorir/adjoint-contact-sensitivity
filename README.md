@@ -62,9 +62,9 @@ src
  │   │   ├── ngm_calculator  
  │   │   └── v_matrix_calculator
  │   └── seir 
- │   │   ├── model
- │   │   ├── ngm_calculator  
- │   │   └── v_matrix_calculator
+ │       ├── model
+ │       ├── ngm_calculator  
+ │       └── v_matrix_calculator
  ├── static 
  │   ├── cm_data 
  │   ├── cm_data_aggregate_kenya
@@ -140,21 +140,20 @@ runner.run()
 ## Output
 
 ```
-generated
-│    └── model
-│    │    └── age_group_bar
-│    │    │   ├── age_group_bar
-│    │    └── CM
-│    │    │   ├── CM.pdf # Visualizes the symmetric contact input as matrix using the selected scaling.    
-│    │    └── contact_input
-│    │    │   ├── contact_input.pdf # Visualizes the transformed contact input using the selected scaling.
-│    │    └── contact_matrices
-│    │    │   ├── contact_matrices.pdf # Visualizes the contact matrices at Home, School, Work, Other, and Full.
-│    │    └── Next Generation Matrix
-│    │    │   ├── ngm_heatmap.pdf # Visualizes the ngm matrices for susceptibility 0.5 and 1.0.           
-│    │    └── results_base_r0_susc
-│    │    │   ├──   epidemic.pdf # Shows the validation heatmap
-│    │    │   └──  Grads_tri.pdf # Shows the gradients with different base R0s and susc as lower tri elements.
+generated/model
+    ├── age_group_bar
+    │   └── age_group_bar
+    ├── CM
+    │   └── CM.pdf # Visualizes the symmetric contact input as matrix using the selected scaling.    
+    ├── contact_input
+    │   └── contact_input.pdf # Visualizes the transformed contact input using the selected scaling.
+    ├── contact_matrices
+    │   └── contact_matrices.pdf # Visualizes the contact matrices at Home, School, Work, Other, and Full.
+    ├── Next Generation Matrix
+    │   └── ngm_heatmap.pdf # Visualizes the ngm matrices for susceptibility 0.5 and 1.0.           
+    └── results_base_r0_susc
+        ├──   epidemic.pdf # Shows the validation heatmap
+        └──  Grads_tri.pdf # Shows the gradients with different base R0s and susc as lower tri elements.
 ```
 
 ## Requirement
