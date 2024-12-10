@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+
 from src.static.model_base import EpidemicModelBase
 
 
