@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 import torch
 
 from src.static.e_matrix_calculator import EMatrixCalculator
