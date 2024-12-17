@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 
 class VMatrixCalculatorBase(ABC):
     def __init__(self, param: dict, n_age: int, states: list) -> None:
+
         self.states = states
         self.n_states = len(states)
         self.n_age = n_age

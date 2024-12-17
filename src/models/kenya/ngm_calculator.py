@@ -24,5 +24,4 @@ class NGMCalculator(NGMCalculatorBase):
                                                           contact_mtx.T
         f[i["e"]:s_mtx:n_states, i["a"]:s_mtx:n_states] = self.parameters["epsilon_a"] * \
                                                           contact_mtx.T
-
         return f

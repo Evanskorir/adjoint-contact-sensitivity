@@ -172,6 +172,7 @@ class Runner:
             susc=susc,
             base_r0=base_r0
         )
+
         contact_manipulation.run_plots(
             plot_title=f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$",
             file_name="epidemics.pdf",

@@ -178,6 +178,6 @@ class SensitivityCalculator:
             "washington": [5.7],
             "seir": [1.8],
         }
-        self.r0_choices = r0_mapping.get(self.model, [1.8])
+        self.r0_choices = r0_mapping.get(self.model, [2.2])
 
 

@@ -45,9 +45,3 @@ class SeirUK(EpidemicModelBase):
         idx = self.c_idx["i"]
         return self.aggregate_by_age(solution, idx)
 
-    def get_recovered(self, solution: np.ndarray) -> np.ndarray:
-        """
-        Return the total number of recovered individuals.
-        """
-        idx = self.c_idx["r"]
-        return self.aggregate_by_age(solution, idx)

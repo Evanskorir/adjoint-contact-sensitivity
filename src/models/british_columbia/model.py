@@ -11,7 +11,7 @@ class BCModel(EpidemicModelBase):
         super().__init__(model_data=model_data, compartments=compartments)
 
     def update_initial_values(self, iv: dict):
-        iv["e2"][2] = 1
+        iv["e2"][3] = 1
         iv.update({"c": iv["e1"] + iv["i1"] + iv["i2"] + iv["r"]
                    })
 

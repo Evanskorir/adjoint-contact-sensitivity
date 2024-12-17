@@ -19,6 +19,7 @@ class NGMCalculator(NGMCalculatorBase):
         n_states = self.n_states
 
         f = torch.zeros((self.n_age * n_states, self.n_age * n_states))
+
         inf_a = self.parameters["inf_a"] if "inf_a" in self.parameters.keys() else 1.0
         inf_s = self.parameters["inf_s"] if "inf_s" in self.parameters.keys() else 1.0
         inf_p = self.parameters["inf_p"] if "inf_p" in self.parameters.keys() else 1.0

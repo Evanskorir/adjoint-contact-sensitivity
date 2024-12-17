@@ -278,7 +278,6 @@ class Plotter:
         """
         ngm_cont_grad = matrix.detach().numpy()
 
-        # Derive v_min and v_max from the matrix
         v_min = ngm_cont_grad.min()
         v_max = ngm_cont_grad.max()
 

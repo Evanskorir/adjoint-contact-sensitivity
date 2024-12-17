@@ -38,6 +38,6 @@ class CGLeafPreparator:
         age_distribution = self.data.age_data.reshape((-1, 1))  # (16, 1) column vector
 
         symmetrized_orig_total_cm = ((contact_matrix * age_distribution) +
-                                     (contact_matrix * age_distribution).T
-                                    ) / 2
+                                     (contact_matrix * age_distribution).T) / 2
+
         return symmetrized_orig_total_cm

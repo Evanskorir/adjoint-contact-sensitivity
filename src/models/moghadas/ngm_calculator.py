@@ -29,5 +29,4 @@ class NGMCalculator(NGMCalculatorBase):
         f[i["e"]:s_mtx:n_states, i["i_h"]:s_mtx:n_states] = inf_s * contact_mtx.T * susc_vec
         f[i["e"]:s_mtx:n_states, i["q_n"]:s_mtx:n_states] = inf_s * contact_mtx.T * susc_vec
         f[i["e"]:s_mtx:n_states, i["q_h"]:s_mtx:n_states] = inf_s * contact_mtx.T * susc_vec
-
         return f

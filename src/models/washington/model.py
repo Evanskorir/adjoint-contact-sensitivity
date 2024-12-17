@@ -36,6 +36,3 @@ class WashingtonModel(EpidemicModelBase):
         idx = self.c_idx["i"]
         return self.aggregate_by_age(solution, idx)
 
-    def get_icu_dynamics(self, solution: np.ndarray) -> np.ndarray:
-        idx = self.c_idx["icu"]
-        return self.aggregate_by_age(solution, idx)

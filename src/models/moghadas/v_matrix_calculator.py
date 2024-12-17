@@ -16,19 +16,24 @@ class VMatrixCalculator(VMatrixCalculatorBase):
         # e -> e
         v[idx("e"), idx("e")] = ps["sigma"]
         # e -> i_n
-        v[idx("i_n"), idx("e")] = -(1 - ps["theta"]) * (1 - ps["q"]) * (1 - ps["h"]) * ps["sigma"]
+        v[idx("i_n"), idx("e")] = -(1 - ps["theta"]) * (1 - ps["q"]) * \
+                                  (1 - ps["h"]) * ps["sigma"]
         # i_n -> i_n
-        v[idx("i_n"), idx("i_n")] = (1 - ps["f_i"]) * ps["gamma"] - ps["f_i"] * ps["tau_i"]
+        v[idx("i_n"), idx("i_n")] = (1 - ps["f_i"]) * ps["gamma"] - ps["f_i"] * \
+                                    ps["tau_i"]
         # e -> q_n
-        v[idx("q_n"), idx("e")] = -(1 - ps["theta"]) * ps["q"] * (1 - ps["h"]) * ps["sigma"]
+        v[idx("q_n"), idx("e")] = -(1 - ps["theta"]) * ps["q"] * (1 - ps["h"]) * \
+                                  ps["sigma"]
         # i_n -> q_n
         v[idx("q_n"), idx("i_n")] = -ps["f_i"] * ps["tau_i"]
         # q_n -> q_n
         v[idx("q_n"), idx("q_n")] = ps["gamma"]
         # e -> i_h
-        v[idx("i_h"), idx("e")] = -(1 - ps["theta"]) * (1 - ps["q"]) * ps["h"] * ps["sigma"]
+        v[idx("i_h"), idx("e")] = -(1 - ps["theta"]) * (1 - ps["q"]) * ps["h"] * \
+                                  ps["sigma"]
         # i_h -> i_h
-        v[idx("i_h"), idx("i_h")] = (1 - ps["f_i"]) * ps["delta"] - ps["f_i"] * ps["tau_i"]
+        v[idx("i_h"), idx("i_h")] = (1 - ps["f_i"]) * ps["delta"] - ps["f_i"] * \
+                                    ps["tau_i"]
         # e -> q_h
         v[idx("q_h"), idx("e")] = -(1 - ps["theta"]) * ps["q"] * ps["h"] * ps["sigma"]
         # q_h -> q_h

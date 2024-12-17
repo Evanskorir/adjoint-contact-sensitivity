@@ -22,8 +22,8 @@ class RostModelHungary(EpidemicModelBase):
         iv.update({"s": self.population - (iv["c"] + iv["l1"] + iv["l2"])})
 
     def get_model(self, xs: np.ndarray, _, ps: dict, cm: np.ndarray) -> np.ndarray:
-        ps = {key: val.numpy() if isinstance(val, torch.Tensor) else val for key,
-                                                                             val in ps.items()}
+        ps = {key: val.numpy() if isinstance(
+            val, torch.Tensor) else val for key, val in ps.items()}
         cm = cm.numpy() if isinstance(cm, torch.Tensor) else cm
 
         s, l1, l2, ip, ia1, ia2, ia3, is1, is2, is3, ih, ic, icr, \
@@ -61,7 +61,8 @@ class RostModelHungary(EpidemicModelBase):
     def get_hospitalized(self, solution: np.ndarray) -> np.ndarray:
         idx = self.c_idx["ih"]
         idx_2 = self.c_idx["icr"]
-        return self.aggregate_by_age(solution, idx) + self.aggregate_by_age(solution, idx_2)
+        return self.aggregate_by_age(solution, idx) + self.aggregate_by_age(solution,
+                                                                            idx_2)
 
     def get_ventilated(self, solution: np.ndarray) -> np.ndarray:
         idx = self.c_idx["ic"]

@@ -33,7 +33,7 @@ class KenyaModel(EpidemicModelBase):
         Main function for computing the epidemic model based on the given
         compartments and parameters.
         """
-        # Extract compartments
+
         s, e, d, a, q, r, c = xs.reshape(-1, self.n_age)
         ps = {key: val.numpy() if isinstance(val, torch.Tensor) else
         val for key, val in ps.items()}

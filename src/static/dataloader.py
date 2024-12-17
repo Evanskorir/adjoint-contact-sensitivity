@@ -146,7 +146,7 @@ class DataLoader:
         wb = xlrd.open_workbook(self._contact_data_file)
         contact_matrices = {}
         num_sheets = 1 if self.model in ["british_columbia", "washington"] else (
-            2 if self.model in ["moghadas", "seir", "italy"] else 4)
+            2 if self.model in ["italy", "moghadas", "seir"] else 4)
 
         for idx in range(num_sheets):
             sheet = wb.sheet_by_index(idx)

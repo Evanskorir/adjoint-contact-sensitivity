@@ -15,10 +15,12 @@ class ContactManipulation:
             self.contact_matrix = self.sens_calc.symmetric_contact_matrix.detach().cpu().numpy()
         else:
             self.contact_matrix = self.sens_calc.symmetric_contact_matrix
+
         if isinstance(self.sens_calc.params, torch.Tensor):
             self.params = self.sens_calc.params.detach().cpu().numpy()
         else:
             self.params = self.sens_calc.params
+
         self.plotter = Plotter(data=self.sens_calc.data,
                                n_age=self.sens_calc.n_age,
                                model=self.sens_calc.model)

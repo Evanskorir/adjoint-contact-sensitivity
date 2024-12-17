@@ -19,6 +19,7 @@ class NGMCalculator(NGMCalculatorBase):
 
         f = torch.zeros((self.n_age * self.n_states, self.n_age * self.n_states))
         susc_vec = self.parameters["susc"].reshape((-1, 1))
-        f[i["i"]:s_mtx:self.n_states, i["i"]:s_mtx:self.n_states] = contact_mtx.T * susc_vec
+        f[i["i"]:s_mtx:self.n_states, i["i"]:s_mtx:self.n_states] = contact_mtx.T * \
+                                                                    susc_vec
 
         return f

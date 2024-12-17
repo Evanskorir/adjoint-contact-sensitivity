@@ -27,5 +27,4 @@ class VMatrixCalculator(VMatrixCalculatorBase):
         # D -> D (symptomatic to symptomatic)
         v[idx("d"), idx("d")] = self.parameters["gamma"]
 
-        # Compute the inverse of the V matrix
         self.v_inv = torch.linalg.inv(v)

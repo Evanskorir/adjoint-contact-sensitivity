@@ -37,4 +37,5 @@ class CMData:
             torch.Tensor: The full contact matrix for the model.
         """
         full_orig_cm = self.load_contact_matrix()
+
         return full_orig_cm

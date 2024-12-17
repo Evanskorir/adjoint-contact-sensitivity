@@ -139,7 +139,6 @@ To run the simulation, follow these steps:
 ```runner.run() ```
 
 ## Output
-
 ```
 generated/model
      ├── age_group_bar
