@@ -1,6 +1,6 @@
 import torch
 
-from src.models.chikina.v_matrix_calculator import VMatrixCalculator
+from src.models.washington.v_matrix_calculator import VMatrixCalculator
 from src.static.ngm_calculator_base import NGMCalculatorBase
 
 

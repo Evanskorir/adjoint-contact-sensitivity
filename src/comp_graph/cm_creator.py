@@ -1,6 +1,6 @@
-from typing import Union
-
 import torch
+
+from typing import Union
 
 
 class CMCreator:

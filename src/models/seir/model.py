@@ -1,4 +1,5 @@
 import numpy as np
+
 from src.static.model_base import EpidemicModelBase
 
 

@@ -1,28 +1,27 @@
 import numpy as np
 import torch
+
 from src.plotter import Plotter
 
 
 class ContactManipulation:
-    def __init__(self, data, params, model, contact_mtx, n_age, model_type: str,
-                 susc: float, base_r0: float):
-        self.model = model
-        self.n_age = n_age
-        self.data = data
+    def __init__(self, sens_calc, susc: float, base_r0: float):
         self.susc = susc
         self.base_r0 = base_r0
-        self.model_type = model_type
+        self.sens_calc = sens_calc
 
         # Ensure contact_matrix is a NumPy array
-        if isinstance(contact_mtx, torch.Tensor):
-            self.contact_matrix = contact_mtx.detach().cpu().numpy()
+        if isinstance(self.sens_calc.symmetric_contact_matrix, torch.Tensor):
+            self.contact_matrix = self.sens_calc.symmetric_contact_matrix.detach().cpu().numpy()
         else:
-            self.contact_matrix = contact_mtx
-        if isinstance(params, torch.Tensor):
-            self.params = params.detach().cpu().numpy()
+            self.contact_matrix = self.sens_calc.symmetric_contact_matrix
+        if isinstance(self.sens_calc.params, torch.Tensor):
+            self.params = self.sens_calc.params.detach().cpu().numpy()
         else:
-            self.params = params
-        self.plotter = Plotter(data=self.data, n_age=self.n_age, model=self.model)
+            self.params = self.sens_calc.params
+        self.plotter = Plotter(data=self.sens_calc.data,
+                               n_age=self.sens_calc.n_age,
+                               model=self.sens_calc.model)
 
     def run_plots(self, folder, file_name, plot_title):
         cm_list_orig = []
@@ -30,9 +29,9 @@ class ContactManipulation:
         self.get_full_contact_matrix(cm_list_orig, legend_list_orig)
 
         # Define time range based on model type
-        if self.model_type in ["rost", "seir"]:
+        if self.sens_calc.model in ["rost", "kenya", "seir"]:
             t = np.arange(0, 800, 0.5)
-        elif self.model_type in ["chikina", "british_columbia"]:
+        elif self.sens_calc.model in ["chikina", "british_columbia", "washington"]:
             t = np.arange(0, 500, 0.5)
         else:
             t = np.arange(0, 200, 0.5)
@@ -43,8 +42,8 @@ class ContactManipulation:
         legend_list = legend_list_orig.copy()
 
         # Specify pairs of elements (age groups) to be manipulated
-        for i in range(self.n_age):
-            for j in range(i, self.n_age):  # Loop through all pairs (including diagonal)
+        for i in range(self.sens_calc.n_age):
+            for j in range(i, self.sens_calc.n_age):  # Loop through all pairs (including diagonal)
                 # Apply the reduction ratio to each (i, j) pair
                 self.generate_contact_matrix(
                     cm_list=cm_list,
@@ -59,12 +58,12 @@ class ContactManipulation:
             time=t,
             cm_list=cm_list,
             legend_list=legend_list,
-            model=self.model,
+            sim_model=self.sens_calc.sim_model,
             ratio=ratio,
             susc=self.susc,
             base_r0=self.base_r0,
             filename=file_name,
-            model_type=self.model_type,
+            model=self.sens_calc.model,
             params=self.params,
             folder=folder
         )
@@ -109,7 +108,9 @@ class ContactManipulation:
         legend_list.append(legend)
         cm_list.append(contact_matrix_spec)
 
-    def _apply_ratio_to_specific_element(self, contact_matrix_spec, row_index, col_index, ratio):
+    @staticmethod
+    def _apply_ratio_to_specific_element(contact_matrix_spec, row_index,
+                                         col_index, ratio):
         # Check if the entry is on the diagonal
         if row_index == col_index:
             # Apply the ratio once for diagonal elements

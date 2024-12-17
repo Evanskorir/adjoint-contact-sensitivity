@@ -1,8 +1,10 @@
 import numpy as np
+
+from abc import ABC, abstractmethod
 from scipy.integrate import odeint
 
 
-class EpidemicModelBase:
+class EpidemicModelBase(ABC):
     def __init__(self, model_data=None, compartments=None, model=None) -> None:
         if compartments is None:
             compartments = []
@@ -41,8 +43,10 @@ class EpidemicModelBase:
         self.update_initial_values(iv=iv)
         return self.get_array_from_dict(comp_dict=iv)
 
+    @abstractmethod
     def update_initial_values(self, iv: dict):
         pass
 
+    @abstractmethod
     def get_model(self, xs, ts, ps, cm):
         pass

@@ -1,58 +1,47 @@
 import os
 import torch
-from src.static.cm_data_aggregate_kenya import KenyaDataAggregator
+
+from src.contact_manipulation import ContactManipulation
 from src.gradient.sensitivity_calculator import SensitivityCalculator
 from src.plotter import Plotter
 from src.static.dataloader import DataLoader
-from src.contact_manipulation import ContactManipulation
 
 
 class Runner:
-    def __init__(self, data: DataLoader, epidemic_model: str, model: str):
+    def __init__(self, data: DataLoader, sim_model: str, model: str):
         """
         Initialize the simulation with the provided data.
         Args: data (DataLoader): DataLoader object containing age data and model params.
         """
-
         self.data = data
-        if model == "kenya":
-            self.kenyan_aggregated_data = KenyaDataAggregator(data=data)
-            self.kenyan_aggregated_data.aggregate_kenyan_contact_matrices()
-            self.population = self.kenyan_aggregated_data.age_data
-            self.n_age = len(self.population)
-        else:
-            self.population = self.data.age_data
-            self.n_age = len(self.population)
-
-        self.params = self.data.model_parameters_data
+        self.population = self.data.age_data
+        self.n_age = len(self.population)
         self.model = model
-        self.epidemic_model = epidemic_model
+        self.sim_model = sim_model
         self.labels = self.data.labels
 
-        self.sensitivity_calc = SensitivityCalculator(data=self.data, model=self.model,
-                                                      epi_model=epidemic_model)
-        self.r0_cm_grad = None
+        # Dynamically set susceptibility choices
+        self.model_age_ranges = {"british_columbia": 3, "rost": 4}
 
-        # User-defined parameters
-        self.susc_choices = [0.5]
-        self.r0_choices = [1.8]
-        # self.scales = ["pop_sum", "contact_sum", "no_scale"]
-        self.scales = ["pop_sum"]
+        # Determine susceptibility choices based on the model
+        if self.model in self.model_age_ranges:
+            self.susc_choices = [0.5, 1.0]  # Reduced susceptibility for younger population
+        else:
+            self.susc_choices = [1.0]  # Uniform susceptibility for other models
+
+        self.sensitivity_calc = SensitivityCalculator(data=self.data,
+                                                      model=self.model)
+        self.r0_cm_grad = None
+        self.r0_choices = self.sensitivity_calc.r0_choices
+
+        self.scales = ["pop_sum"]  # other options: "contact_sum", "no_scale"
 
     def set_susceptibility(self, susceptibility: torch.Tensor, susc: float):
         """
         Set susceptibility values based on the model type.
-        Args:
-            susceptibility (torch.Tensor): Tensor to update with susceptibility values.
-            susc (float): Susceptibility value to apply.
         """
-        model_age_ranges = {
-            "british_columbia": 3,
-            "rost": 4
-        }
-
-        if self.model in model_age_ranges:
-            susceptibility[:model_age_ranges[self.model]] = susc
+        if self.model in self.model_age_ranges:
+            susceptibility[:self.model_age_ranges[self.model]] = susc
 
     def run(self):
         """
@@ -64,10 +53,10 @@ class Runner:
             for susc in self.susc_choices:
                 # Update susceptibility values in the model parameters
                 self.set_susceptibility(susceptibility, susc)
-                self.params.update({"susc": susceptibility})
+                self.sensitivity_calc.params.update({"susc": susceptibility})
 
                 # Run sensitivity calculation for the current scale and parameters
-                self.sensitivity_calc.run(scale=scale, params=self.params)
+                self.sensitivity_calc.run(scale=scale, params=self.sensitivity_calc.params)
 
                 # Create plots and process the results
                 self.create_plots(scale=scale, susc=susc)
@@ -99,7 +88,7 @@ class Runner:
         """
         # Compute beta as base R0 divided by the dominant eigenvalue
         beta = base_r0 / self.sensitivity_calc.eigen_value
-        self.params.update({"beta": beta})
+        self.sensitivity_calc.params.update({"beta": beta})
 
         # Scale the eigenvalue gradient by beta to get r0_cm_grad
         self.r0_cm_grad = beta * self.sensitivity_calc.eigen_value_gradient.eig_val_cm_grad
@@ -179,13 +168,9 @@ class Runner:
 
         # instantiate contact manipulation and get the plot
         contact_manipulation = ContactManipulation(
-            data=self.data,
-            model_type=self.model,
-            contact_mtx=self.sensitivity_calc.symmetric_contact_matrix,
-            params=self.params,
-            susc=susc, base_r0=base_r0,
-            model=self.sensitivity_calc.model,
-            n_age=self.n_age
+            sens_calc=self.sensitivity_calc,
+            susc=susc,
+            base_r0=base_r0
         )
         contact_manipulation.run_plots(
             plot_title=f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$",

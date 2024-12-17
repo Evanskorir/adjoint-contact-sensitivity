@@ -1,11 +1,13 @@
-import os
-import torch
-import pandas as pd
 import matplotlib
-import seaborn as sns
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
+import os
+import pandas as pd
+import seaborn as sns
+import torch
+
+from matplotlib.colors import LinearSegmentedColormap
+
 matplotlib.use('agg')
 
 
@@ -20,41 +22,46 @@ class Plotter:
         self.create_matrix = np.zeros((self.n_age, self.n_age)) * np.nan
 
         # Custom reversed blue colormap
-        blue_colors = ["#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b"]
-        self.reversed_blues_cmap = LinearSegmentedColormap.from_list("ReversedBlues",
-                                                                     blue_colors)
-        # Custom reversed green colormap: light green for low values, dark green for high values
-        green_colors = ["#f7fcf5", "#c7e9c0", "#74c476", "#238b45", "#00441b"]
-        self.reversed_greens_cmap = LinearSegmentedColormap.from_list("ReversedGreens",
-                                                                 green_colors)
+        blue_colors = ["#f7fbff", "#c6dbef", "#6baed6",
+                       "#2171b5", "#08306b"]
+        self.reversed_blues_cmap = LinearSegmentedColormap.from_list(
+            "ReversedBlues", blue_colors)
+        # Custom reversed green colormap: light green for low values,
+        # dark green for high values
+        green_colors = ["#f7fcf5", "#c7e9c0", "#74c476",
+                        "#238b45", "#00441b"]
+        self.reversed_greens_cmap = LinearSegmentedColormap.from_list(
+            "ReversedGreens", green_colors)
 
-    def save_figure(self, ax, output_path):
+    @staticmethod
+    def save_figure(ax, output_path):
         for spine in ax.spines.values():
             spine.set_visible(False)
         plt.savefig(output_path, format="pdf", bbox_inches='tight')
         plt.close()
 
+    @staticmethod
+    def get_tick_labels(labels, alternate=False):
+        """Helper function to generate tick labels with optional alternation."""
+        if alternate:
+            return [label if i % 2 == 0 else "" for i, label in enumerate(labels)]
+        return labels
+
     def style_axes(self, ax, label_axes=True):
+        """Style the axes with appropriate labels and ticks."""
         ax.set_xticks(np.arange(self.n_age) + 0.5)
         ax.set_yticks(np.arange(self.n_age) + 0.5)
 
         # Customize axis labels
         if label_axes:
-            if self.model == "rost":
-                # Apply alternating labels only for 'rost' model
-                xtick_labels = [label if i % 2 == 0 else "" for i, label in enumerate(self.labels)]
-                y_tick_labels = [label if i % 2 == 0 else "" for i, label in enumerate(self.labels)]
-            else:
-                # Apply all labels for other models
-                xtick_labels = self.labels
-                y_tick_labels = self.labels
-
+            alternate = self.model == "rost"
+            xtick_labels = self.get_tick_labels(self.labels, alternate)
+            y_tick_labels = self.get_tick_labels(self.labels, alternate)
             ax.set_xticklabels(xtick_labels, fontsize=20, fontweight='bold',
                                rotation=90, ha='center', color='darkblue')
             ax.set_yticklabels(y_tick_labels, fontsize=20, fontweight='bold',
                                rotation=0, va='center', color='darkblue')
         else:
-            # If label_axes=False, use all labels irrespective of the model
             ax.set_xticklabels(self.labels, fontsize=20, fontweight='bold',
                                rotation=45, ha='center', color='darkblue')
             ax.set_yticklabels(self.labels, fontsize=20, fontweight='bold',
@@ -81,13 +88,13 @@ class Plotter:
 
         # Customize axes based on label_axes flag
         if label_axes:
-            ax.set_xlabel("Age Infected", fontsize=18, labelpad=15, fontweight='bold',
-                          color='darkgreen')
-            ax.set_ylabel("Age Susceptible", fontsize=18, labelpad=15, fontweight='bold',
-                          color='darkgreen')
+            ax.set_xlabel("Age Infected", fontsize=18, labelpad=15,
+                          fontweight='bold', color='darkgreen')
+            ax.set_ylabel("Age Susceptible", fontsize=18, labelpad=15,
+                          fontweight='bold', color='darkgreen')
         else:
-            ax.set_xticklabels(self.labels, rotation=45, ha='center', fontsize=15,
-                               fontweight='bold', color='darkblue')
+            ax.set_xticklabels(self.labels, rotation=45, ha='center',
+                               fontsize=15, fontweight='bold', color='darkblue')
             ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold',
                                color='darkblue')
 
@@ -259,8 +266,8 @@ class Plotter:
                                         label_axes: bool = True,
                                         show_colorbar: bool = True):
         """
-        Plot the matrix as a heatmap with improved aesthetics, using a custom reversed green colormap.
-
+        Plot the matrix as a heatmap with improved aesthetics,
+        using a custom reversed green colormap.
         Args:
             matrix (torch.Tensor): The matrix to be plotted.
             plot_title (str): The title of the plot.
@@ -294,25 +301,22 @@ class Plotter:
                 tick.set_fontsize(20)
                 tick.set_color('darkblue')
 
-        # Set ticks
+        # Set ticks and labels
+        alternate = self.model in ["rost", "kenya"]
+        xtick_labels = self.get_tick_labels(self.labels, alternate)
+        y_tick_labels = self.get_tick_labels(self.labels, alternate)
         ax.set_xticks(np.arange(self.n_age))
         ax.set_yticks(np.arange(self.n_age))
         if self.model == "rost":
-            # Alternating labels only for 'rost' model
-            xtick_labels = [label if i % 2 == 0 else "" for i, label in enumerate(self.labels)]
-            y_tick_labels = [label if i % 2 == 0 else "" for i, label in enumerate(self.labels)]
+            ax.set_xticklabels(xtick_labels, rotation=90, ha='center', fontsize=20,
+                               fontweight='bold', color='darkblue')
+            ax.set_yticklabels(y_tick_labels, fontsize=20, fontweight='bold',
+                               color='darkblue')
         else:
-            # Full labels for all other models
-            xtick_labels = self.labels
-            y_tick_labels = self.labels
-
-        # Apply the labels
-        ax.set_xticklabels(xtick_labels, rotation=90, ha='center', fontsize=20,
-                           fontweight='bold', color='darkblue')
-        ax.set_yticklabels(y_tick_labels, fontsize=20, fontweight='bold',
-                           color='darkblue')
-        ax.tick_params(axis='both', which='major', length=10, width=3,
-                       labelsize=20, color='darkblue')
+            ax.set_xticklabels(xtick_labels, rotation=90, ha='center', fontsize=15,
+                               fontweight='bold', color='darkblue')
+            ax.set_yticklabels(y_tick_labels, fontsize=15, fontweight='bold',
+                               color='darkblue')
 
         # Ensure labels appear only on the bottom x-axis
         ax.xaxis.set_ticks_position('bottom')  # Position ticks at the bottom
@@ -383,12 +387,6 @@ class Plotter:
         else:
             percentage_contact = np.zeros_like(total_contacts)
 
-        # Calculate 95% percentile intervals
-        # lower_percentiles = np.percentile(symmetrized_cont_matrix, 2.5, axis=0)
-        # upper_percentiles = np.percentile(symmetrized_cont_matrix, 97.5, axis=0)
-
-        # Compute the error as the difference between upper and lower percentiles
-        # percentile_errors = (upper_percentiles - lower_percentiles) / total_sum * 100
         percentile_errors = percentage_contact * 0.1
 
         # Create a colormap based on the percentage contribution using 'Greens'
@@ -443,9 +441,10 @@ class Plotter:
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
         plt.close()
 
-    def plot_epidemic_peak_and_size(self, time, cm_list, legend_list,
-                                    ratio, model, params,
-                                    filename, model_type, folder,
+    @staticmethod
+    def plot_epidemic_peak_and_size(time, cm_list, legend_list,
+                                    ratio, sim_model, params,
+                                    filename, model, folder,
                                     susc: float, base_r0: float):
         """
         Calculates and saves the peak epidemic size after running a simulation
@@ -458,17 +457,17 @@ class Plotter:
             ratio = [ratio]
 
         results_list = []
-        init_values = model.get_initial_values()
+        init_values = sim_model.get_initial_values()
 
-        baseline_solution = model.get_solution(
+        baseline_solution = sim_model.get_solution(
             init_values=init_values,
             t=time,
             parameters=params,
             cm=cm_list[0]  # Original contact matrix
         )
-        baseline_c = model.aggregate_by_age(
+        baseline_c = sim_model.aggregate_by_age(
             solution=baseline_solution,
-            idx=model.c_idx["c"]
+            idx=sim_model.c_idx["c"]
         )
         baseline_n_infected_max = baseline_c.max()
 
@@ -479,21 +478,21 @@ class Plotter:
         for idx, (c_matrix, legend) in enumerate(zip(cm_list, legend_list)):
             for r_idx, r in enumerate(ratio):
                 # Simulate the epidemic with the current contact matrix and ratio
-                solution = model.get_solution(
+                solution = sim_model.get_solution(
                     init_values=init_values,
                     t=time,
                     parameters=params,
                     cm=c_matrix
                 )
-                if model_type in ["rost", "seir", "british_columbia", "kenya"]:
-                    total_infecteds = model.aggregate_by_age(solution=solution,
-                                                             idx=model.c_idx["c"])
-                elif model_type == "moghadas":
-                    total_infecteds = model.aggregate_by_age(solution=solution,
-                                                             idx=model.c_idx["i"])
-                elif model_type == "chikina":
-                    total_infecteds = model.aggregate_by_age(solution=solution,
-                                                             idx=model.c_idx["inf"])
+                if model in ["rost", "seir", "british_columbia", "kenya", "washington"]:
+                    total_infecteds = sim_model.aggregate_by_age(solution=solution,
+                                                             idx=sim_model.c_idx["c"])
+                elif model == "moghadas":
+                    total_infecteds = sim_model.aggregate_by_age(solution=solution,
+                                                             idx=sim_model.c_idx["i"])
+                elif model == "chikina":
+                    total_infecteds = sim_model.aggregate_by_age(solution=solution,
+                                                             idx=sim_model.c_idx["inf"])
                 else:
                     raise Exception("Invalid model")
 
