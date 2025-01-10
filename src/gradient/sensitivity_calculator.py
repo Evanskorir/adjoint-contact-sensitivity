@@ -17,8 +17,6 @@ class SensitivityCalculator:
         self.n_age = len(self.population)
 
         # Initialize placeholders for calculated values
-        self.susceptibles = None
-        self.sim_model = None
         self.ngm_calculator = None
         self.ngm_small_tensor = None
         self.ngm_small_grads = None
@@ -64,10 +62,6 @@ class SensitivityCalculator:
 
         # 7. Calculate eigenvalue and eigenvalue gradients for R0
         self._calculate_eigenvectors()
-
-        # 8. Model simulation and getting their resulting
-        # final epidemic size after contact change
-        self._simulate_model()
 
     def _initialize_ngm_calculator(self, params: dict):
         """
@@ -143,30 +137,6 @@ class SensitivityCalculator:
         eigen_value_grad.run(ngm_small_grads=self.ngm_small_grads)
         self.eigen_value_gradient = eigen_value_grad
 
-    def _simulate_model(self):
-        """
-        Simulate the model and retrieve initial susceptible values.
-        """
-        self.sim_model = self._get_simulation_model()
-        self.susceptibles = self.sim_model.get_initial_values()[
-                            self.sim_model.c_idx["s"] *
-                            self.n_age:(self.sim_model.c_idx["s"] + 1) * self.n_age
-                            ]
-
-    def _get_simulation_model(self):
-        """
-        Retrieve the appropriate epidemic simulation model.
-        """
-        model_mapping = {
-            "british_columbia": models.BCModel,
-            "kenya": models.KenyaModel,
-            "rost": models.RostModelHungary,
-            "seir": models.SeirUK,
-            "washington": models.WashingtonModel,
-        }
-        model_class = model_mapping.get(self.model, models.MoghadasModel)
-        return model_class(model_data=self.data)
-
     def _initialize_r0_choices(self):
         """
         Set R0 choices based on the selected model.
@@ -179,5 +149,3 @@ class SensitivityCalculator:
             "seir": [1.8],
         }
         self.r0_choices = r0_mapping.get(self.model, [2.2])
-
-

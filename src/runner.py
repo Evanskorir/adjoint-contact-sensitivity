@@ -1,14 +1,13 @@
 import os
 import torch
 
-from src.contact_manipulation import ContactManipulation
 from src.gradient.sensitivity_calculator import SensitivityCalculator
 from src.plotter import Plotter
 from src.static.dataloader import DataLoader
 
 
 class Runner:
-    def __init__(self, data: DataLoader, sim_model: str, model: str):
+    def __init__(self, data: DataLoader, model: str):
         """
         Initialize the simulation with the provided data.
         Args: data (DataLoader): DataLoader object containing age data and model params.
@@ -17,7 +16,6 @@ class Runner:
         self.population = self.data.age_data
         self.n_age = len(self.population)
         self.model = model
-        self.sim_model = sim_model
         self.labels = self.data.labels
 
         # Dynamically set susceptibility choices
@@ -166,14 +164,3 @@ class Runner:
             folder=scale_folder
         )
 
-        # instantiate contact manipulation and get the plot
-        contact_manipulation = ContactManipulation(
-            sens_calc=self.sensitivity_calc,
-            susc=susc,
-            base_r0=base_r0
-        )
-
-        contact_manipulation.run_plots(
-            plot_title=f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$",
-            file_name="epidemics.pdf",
-            folder=scale_folder)
