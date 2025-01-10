@@ -1,6 +1,7 @@
 import src.models as models
 import src.static as static
 
+from src.aggregation import AggregationApproach
 from src.comp_graph.cm_creator import CMCreator
 from src.comp_graph.cm_elements_cg_leaf import CMElementsCGLeaf
 from src.gradient.eigen_value_gradient import EigenValueGradient
@@ -10,6 +11,7 @@ from src.static.cm_leaf_preparator import CGLeafPreparator
 
 class SensitivityCalculator:
     def __init__(self, data: static.DataLoader, model: str):
+
         self.data = data
         self.model = model
         self.params = self.data.model_parameters_data
@@ -26,6 +28,7 @@ class SensitivityCalculator:
         self.contact_input = None
         self.scale_value = None
         self.symmetric_contact_matrix = None
+        self.cumulative_elasticities = None
 
         self._initialize_r0_choices()
         self._select_ngm_calculator()
@@ -62,6 +65,9 @@ class SensitivityCalculator:
 
         # 7. Calculate eigenvalue and eigenvalue gradients for R0
         self._calculate_eigenvectors()
+
+        # 8. Calculate the cumulative elasticities
+        self.get_aggregated_sensitivities()
 
     def _initialize_ngm_calculator(self, params: dict):
         """
@@ -136,6 +142,15 @@ class SensitivityCalculator:
         )
         eigen_value_grad.run(ngm_small_grads=self.ngm_small_grads)
         self.eigen_value_gradient = eigen_value_grad
+
+    def get_aggregated_sensitivities(self):
+        elasticities = AggregationApproach(
+            eig_val_cm_grad=self.eigen_value_gradient.eig_val_cm_grad,
+            contact_input=self.contact_input,
+            r0=self.r0_choices[0],
+            n_age=self.n_age)
+        cumulative_elasticities = elasticities.run()
+        self.cumulative_elasticities = cumulative_elasticities
 
     def _initialize_r0_choices(self):
         """

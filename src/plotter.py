@@ -439,3 +439,64 @@ class Plotter:
         save_path = os.path.join(folder, f"{filename}.pdf")
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
         plt.close()
+
+    def plot_cumulative_elasticities(self, cumulative_elasticities: torch.Tensor,
+                                      plot_title: str, filename: str, folder: str):
+        """
+        Plot normalized cumulative_elasticities for each age group as a bar plot with color gradient,
+        horizontal and vertical grids.
+
+        Args:
+            cumulative_elasticities (torch.Tensor): Tensor of cumulative_sensitivities for each age group.
+            plot_title (str): Title of the plot.
+            filename (str): Name of the file to save the plot.
+            folder (str): Directory where the plot will be saved.
+        """
+        # Ensure folder exists
+        os.makedirs(folder, exist_ok=True)
+
+        # Convert elasticities to numpy if it's a tensor
+        if isinstance(cumulative_elasticities, torch.Tensor):
+            cumulative_elasticities = cumulative_elasticities.detach().cpu().numpy()
+
+        # Normalize elasticities by dividing by the sum
+        total_sensitivities = cumulative_elasticities.sum()
+        normalized_sensitivities = cumulative_elasticities / total_sensitivities  # Normalize to sum to 1
+
+        # Set up colormap and normalize for coloring (using Reds instead of Greens)
+        norm = plt.Normalize(vmin=normalized_sensitivities.min(),
+                             vmax=normalized_sensitivities.max())
+        cmap = plt.get_cmap("YlOrRd")
+
+        # Assign colors based on normalized elasticities
+        colors = [cmap(norm(value)) for value in normalized_sensitivities]
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        x_pos = np.arange(len(self.labels))
+
+        ax.bar(x_pos, normalized_sensitivities, align='center', alpha=0.9,
+               color=colors, edgecolor='black', zorder=3)
+
+        ax.tick_params(axis='y', which='both', left=False, right=False,
+                       labelsize=15, labelcolor='darkred')
+        ax.tick_params(axis='x', which='both', bottom=True, top=False,
+                       labelsize=15,  width=2,  length=8, color='darkred')
+
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        # ax.grid(axis='y', linestyle='--', linewidth=0.1, alpha=0.5, zorder=1)
+        # ax.grid(axis='x', linestyle='--', linewidth=0.1, alpha=0.5, zorder=1)
+
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(self.labels, rotation=45, ha='center', fontsize=15,
+                           fontweight='bold', color='darkred')
+
+        ax.set_ylabel(r"Cumulative elasticities $\tilde{e}_j$", fontsize=15,
+                      fontweight="bold", color='darkred')
+        ax.set_title(plot_title, fontsize=22, pad=20, fontweight="bold", color='darkred')
+        plt.tight_layout()
+        save_path = os.path.join(folder, f"{filename}.pdf")
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        plt.close()
+

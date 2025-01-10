@@ -164,3 +164,15 @@ class Runner:
             folder=scale_folder
         )
 
+        # Plot cumulative sensitivities
+        elasticity_folder = os.path.join(model_folder, "cum_elasticities")
+        os.makedirs(elasticity_folder, exist_ok=True)
+
+        plot.plot_cumulative_elasticities(
+            cumulative_elasticities=self.sensitivity_calc.cumulative_elasticities,
+            plot_title=f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$",
+            filename=f"cum_elasticities_susc_{susc:.1f}_r0_{base_r0:.1f}",
+            folder=elasticity_folder
+        )
+
+
