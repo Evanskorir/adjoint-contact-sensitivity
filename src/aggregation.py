@@ -22,8 +22,9 @@ class AggregationApproach:
                              " computing elasticities.")
 
         # Compute pairwise elasticities e_k
-        pairwise_elasticities = (self.eig_val_cm_grad.squeeze() * self.contact_input) /\
-                                self.r0
+        pairwise_elasticities = (
+            self.eig_val_cm_grad.squeeze() * self.contact_input
+        ) / self.r0
 
         # Map the pairwise elasticities back to age groups
         # Create a mapping from the upper tri elements to the age groups
@@ -42,4 +43,3 @@ class AggregationApproach:
         self.cumulative_elasticities = age_group_contributions
 
         return self.cumulative_elasticities
-

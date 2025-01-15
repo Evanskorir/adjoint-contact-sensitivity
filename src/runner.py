@@ -175,5 +175,3 @@ class Runner:
             filename=f"cum_elasticities_susc_{susc:.1f}_r0_{base_r0:.1f}",
             folder=elasticity_folder
         )
-
-

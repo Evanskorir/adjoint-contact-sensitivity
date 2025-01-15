@@ -441,7 +441,7 @@ class Plotter:
         plt.close()
 
     def plot_cumulative_elasticities(self, cumulative_elasticities: torch.Tensor,
-                                      plot_title: str, filename: str, folder: str):
+                                     plot_title: str, filename: str, folder: str):
         """
         Plot normalized cumulative_elasticities for each age group as a bar plot with color gradient,
         horizontal and vertical grids.
@@ -499,4 +499,3 @@ class Plotter:
         save_path = os.path.join(folder, f"{filename}.pdf")
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
         plt.close()
-
