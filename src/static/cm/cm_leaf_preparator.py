@@ -1,6 +1,6 @@
 import torch
 
-from src.static.cm_data import CMData
+from src.static.cm.cm_data import CMData
 from src.static.dataloader import DataLoader
 
 

@@ -16,5 +16,4 @@ model_calc_map = {
     "rost": RostNGMCalculator,
     "seir": SeirNGMCalculator,
     "washington": WashingtonGMCalculator
-
-        }
+}
