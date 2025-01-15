@@ -163,4 +163,3 @@ class Runner:
             filename="Grads_tri.pdf",
             folder=scale_folder
         )
-

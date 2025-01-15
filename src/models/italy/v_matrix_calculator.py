@@ -1,6 +1,6 @@
 import torch
 
-from src.static.v_matrix_calculator_base import VMatrixCalculatorBase
+from src.static.model import VMatrixCalculatorBase
 
 
 class VMatrixCalculator(VMatrixCalculatorBase):

@@ -1,7 +1,7 @@
 import torch
 
 from abc import ABC, abstractmethod
-from src.static.e_matrix_calculator import EMatrixCalculator
+from src.static.model.e_matrix_calculator import EMatrixCalculator
 
 
 class NGMCalculatorBase(ABC):

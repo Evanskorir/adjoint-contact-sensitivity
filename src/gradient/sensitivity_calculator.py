@@ -5,7 +5,7 @@ from src.comp_graph.cm_creator import CMCreator
 from src.comp_graph.cm_elements_cg_leaf import CMElementsCGLeaf
 from src.gradient.eigen_value_gradient import EigenValueGradient
 from src.gradient.ngm_gradient import NGMGradient
-from src.static.cm_leaf_preparator import CGLeafPreparator
+from src.static.cm.cm_leaf_preparator import CGLeafPreparator
 
 
 class SensitivityCalculator:
