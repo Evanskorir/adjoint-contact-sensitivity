@@ -1,6 +1,7 @@
+from abc import ABC, abstractmethod
+
 import torch
 
-from abc import ABC, abstractmethod
 from src.static.model.e_matrix_calculator import EMatrixCalculator
 
 

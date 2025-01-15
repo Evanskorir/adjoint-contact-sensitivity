@@ -1,9 +1,9 @@
 import json
 import os
-import torch
-import xlrd
 
 from gdown import download
+import torch
+import xlrd
 
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
