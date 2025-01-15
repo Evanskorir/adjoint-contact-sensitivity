@@ -5,12 +5,14 @@ from src.gradient.ngm_gradient import NGMGradient
 import src.models as models
 import src.static as static
 from src.static.cm.cm_leaf_preparator import CGLeafPreparator
+from src.static.svd_eigen_calculator import SVDEigenCalculator
 
 
 class SensitivityCalculator:
-    def __init__(self, data: static.DataLoader, model: str):
+    def __init__(self, data: static.DataLoader, model: str, method):
         self.data = data
         self.model = model
+        self.method = method  # 'eig' for Eigen Decomposition, 'svd' for SVD
         self.params = self.data.model_parameters_data
         self.population = self.data.age_data
         self.n_age = len(self.population)
@@ -20,8 +22,12 @@ class SensitivityCalculator:
         self.ngm_small_tensor = None
         self.ngm_small_grads = None
         self.eigen_value_gradient = None
+
         self.eigen_value = None
         self.eigen_vector = None
+        self.eigen_vector_left = None
+        self.eigen_vector_right = None
+
         self.contact_input = None
         self.scale_value = None
         self.symmetric_contact_matrix = None
@@ -121,17 +127,32 @@ class SensitivityCalculator:
 
     def _calculate_eigenvectors(self):
         """
-        Calculate the dominant eigenvalue, eigenvector, and gradients.
+        Select between Eigen Decomposition and SVD for eigenvector calculation.
         """
-        eigen_calculator = static.EigenCalculator(ngm_small_tensor=self.ngm_small_tensor)
+        method_map = {
+            'eig': (static.EigenCalculator,
+                    'dominant_left_eig_vec', 'dominant_right_eig_vec', 'dominant_eig_val'),
+            'svd': (SVDEigenCalculator,
+                    'left_singular_vec', 'right_singular_vec', 'dominant_singular_val')
+        }
+
+        CalculatorClass, left_vec_attr, right_vec_attr, value_attr = method_map[self.method]
+
+        # Initialize and run the appropriate calculator
+        eigen_calculator = CalculatorClass(self.ngm_small_tensor)
         eigen_calculator.run()
 
-        self.eigen_vector = eigen_calculator.dominant_eig_vec
-        self.eigen_value = eigen_calculator.dominant_eig_val
+        # Extract eigenvectors and eigenvalue
+        self.eigen_vector_left = getattr(eigen_calculator, left_vec_attr)
+        self.eigen_vector_right = getattr(eigen_calculator, right_vec_attr)
+        self.eigen_value = getattr(eigen_calculator, value_attr)
 
+        # Compute the eigenvalue gradient
         eigen_value_grad = EigenValueGradient(
             ngm_small_tensor=self.ngm_small_tensor,
-            dominant_eig_vec=self.eigen_vector
+            left_eig_vec=self.eigen_vector_left,
+            right_eig_vec=self.eigen_vector_right,
+            method=self.method
         )
         eigen_value_grad.run(ngm_small_grads=self.ngm_small_grads)
         self.eigen_value_gradient = eigen_value_grad

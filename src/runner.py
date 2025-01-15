@@ -8,7 +8,7 @@ from src.static.dataloader import DataLoader
 
 
 class Runner:
-    def __init__(self, data: DataLoader, model: str):
+    def __init__(self, data: DataLoader, model: str, method: str):
         """
         Initialize the simulation with the provided data.
         Args: data (DataLoader): DataLoader object containing age data and model params.
@@ -17,6 +17,7 @@ class Runner:
         self.population = self.data.age_data
         self.n_age = len(self.population)
         self.model = model
+        self.method = method
         self.labels = self.data.labels
 
         # Dynamically set susceptibility choices
@@ -29,7 +30,8 @@ class Runner:
             self.susc_choices = [1.0]  # Uniform susceptibility for other models
 
         self.sensitivity_calc = SensitivityCalculator(data=self.data,
-                                                      model=self.model)
+                                                      model=self.model,
+                                                      method=self.method)
         self.r0_cm_grad = None
         self.r0_choices = self.sensitivity_calc.r0_choices
 

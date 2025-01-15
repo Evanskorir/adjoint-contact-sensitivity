@@ -3,9 +3,10 @@ from src.static.dataloader import DataLoader
 
 
 def main():
-    model = "rost"
+    model = "british_columbia"
+    method = "svd"
     data = DataLoader(model=model)
-    runner = Runner(data=data, model=model)
+    runner = Runner(data=data, model=model, method=method)
     runner.run()
 
 
