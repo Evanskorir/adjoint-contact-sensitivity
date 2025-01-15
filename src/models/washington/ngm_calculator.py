@@ -1,12 +1,12 @@
 import torch
 
-from src.models.seir.v_matrix_calculator import VMatrixCalculator
+from src.models.washington.v_matrix_calculator import VMatrixCalculator
 from src.static.model import NGMCalculatorBase
 
 
 class NGMCalculator(NGMCalculatorBase):
     def __init__(self, param: dict, n_age: int) -> None:
-        states = ["e", "i"]
+        states = ["i"]
         self.n_states = len(states)
         super().__init__(param=param, n_age=n_age, states=states)
 
@@ -16,10 +16,10 @@ class NGMCalculator(NGMCalculatorBase):
     def _get_f(self, contact_mtx: torch.Tensor) -> torch.Tensor:
         i = self.i
         s_mtx = self.s_mtx
-        n_state = self.n_states
 
         f = torch.zeros((self.n_age * self.n_states, self.n_age * self.n_states))
-        f[i["e"]:s_mtx:n_state, i["e"]:s_mtx:n_state] = contact_mtx.T
-        f[i["e"]:s_mtx:n_state, i["i"]:s_mtx:n_state] = contact_mtx.T
+        susc_vec = self.parameters["susc"].reshape((-1, 1))
+        f[i["i"]:s_mtx:self.n_states, i["i"]:s_mtx:self.n_states] = contact_mtx.T * \
+                                                                    susc_vec
 
         return f

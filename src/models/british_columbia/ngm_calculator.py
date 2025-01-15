@@ -1,7 +1,7 @@
 import torch
 
-from src.static.ngm_calculator_base import NGMCalculatorBase
 from src.models.british_columbia.v_matrix_calculator import VMatrixCalculator
+from src.static.model import NGMCalculatorBase
 
 
 class NGMCalculator(NGMCalculatorBase):
@@ -20,6 +20,7 @@ class NGMCalculator(NGMCalculatorBase):
 
         f = torch.zeros((self.n_age * n_states, self.n_age * n_states))
         susc_vec = self.parameters["susc"].reshape((-1, 1))
+
         f[i["e1"]:s_mtx:n_states, i["e2"]:s_mtx:n_states] = contact_mtx.T * susc_vec
         f[i["e1"]:s_mtx:n_states, i["i1"]:s_mtx:n_states] = contact_mtx.T * susc_vec
         f[i["e1"]:s_mtx:n_states, i["i2"]:s_mtx:n_states] = contact_mtx.T * susc_vec

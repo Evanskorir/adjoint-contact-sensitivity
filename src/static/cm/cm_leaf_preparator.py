@@ -1,7 +1,7 @@
 import torch
 
+from src.static.cm.cm_data import CMData
 from src.static.dataloader import DataLoader
-from src.static.cm_data import CMData
 
 
 class CGLeafPreparator:
@@ -34,8 +34,10 @@ class CGLeafPreparator:
         Args: contact_matrix (torch.Tensor): The contact matrix to transform.
         Returns: torch.Tensor: The transformed and symmetrized contact matrix.
         """
+
         age_distribution = self.data.age_data.reshape((-1, 1))  # (16, 1) column vector
+
         symmetrized_orig_total_cm = ((contact_matrix * age_distribution) +
-                                     (contact_matrix * age_distribution).T
-                                    ) / 2
+                                     (contact_matrix * age_distribution).T) / 2
+
         return symmetrized_orig_total_cm

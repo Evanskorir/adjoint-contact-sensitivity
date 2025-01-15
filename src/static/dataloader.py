@@ -44,7 +44,7 @@ class DataLoader:
     @staticmethod
     def _load_model_config():
         """Download and load the model configuration file from Google Drive."""
-        model_config_url = "https://drive.google.com/uc?id=18ztwRVy4qW2NMs8OKUbkEDS_1rAxpRt0"
+        model_config_url = "https://drive.google.com/uc?id=1_wUh7ZF3JoMIrshnS0_Iaj_6WRxbixsz"
         config_file_path = os.path.join(PROJECT_PATH, "../data", "model_config.json")
 
         # Download the model configuration if it doesn't exist
@@ -145,8 +145,8 @@ class DataLoader:
         """Load contact matrices from the specified file."""
         wb = xlrd.open_workbook(self._contact_data_file)
         contact_matrices = {}
-        num_sheets = 1 if self.model == "british_columbia" else (
-            2 if self.model in ["moghadas", "seir", "italy"] else 4)
+        num_sheets = 1 if self.model in ["british_columbia", "washington"] else (
+            2 if self.model in ["italy", "moghadas", "seir"] else 4)
 
         for idx in range(num_sheets):
             sheet = wb.sheet_by_index(idx)

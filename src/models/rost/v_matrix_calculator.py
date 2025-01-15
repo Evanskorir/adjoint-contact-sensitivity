@@ -1,6 +1,6 @@
 import torch
 
-from src.static.v_matrix_calculator_base import VMatrixCalculatorBase
+from src.static.model import VMatrixCalculatorBase
 
 
 class VMatrixCalculator(VMatrixCalculatorBase):
@@ -16,6 +16,7 @@ class VMatrixCalculator(VMatrixCalculatorBase):
     def _get_v(self):
         idx = self._idx
         v = torch.zeros((self.n_age * self.n_states, self.n_age * self.n_states))
+
         # L1 -> L2
         v[idx("l1"), idx("l1")] = self.n_l * self.parameters["alpha_l"]
         v[idx("l2"), idx("l1")] = -self.n_l * self.parameters["alpha_l"]

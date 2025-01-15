@@ -1,6 +1,6 @@
 import torch
 
-from src.static.v_matrix_calculator_base import VMatrixCalculatorBase
+from src.static.model import VMatrixCalculatorBase
 
 
 class VMatrixCalculator(VMatrixCalculatorBase):
@@ -13,9 +13,9 @@ class VMatrixCalculator(VMatrixCalculatorBase):
         idx = self._idx
         v = torch.zeros((self.n_age * self.n_states, self.n_age * self.n_states))
 
-        # E1 -> E1 (exposed to exposed)
+        # E1 -> E1
         v[idx("e1"), idx("e1")] = self.parameters["H_1"]
-        # E1 -> E2 (exposed to asymptomatic)
+        # E1 -> E2
         v[idx("e2"), idx("e1")] = -self.parameters["H_1"]
         # E2 -> E2
         v[idx("e2"), idx("e2")] = self.parameters["H_2"]

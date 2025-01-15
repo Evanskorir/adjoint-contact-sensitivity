@@ -1,6 +1,6 @@
 import torch
 
-from src.static.v_matrix_calculator_base import VMatrixCalculatorBase
+from src.static.model import VMatrixCalculatorBase
 
 
 class VMatrixCalculator(VMatrixCalculatorBase):
@@ -13,4 +13,5 @@ class VMatrixCalculator(VMatrixCalculatorBase):
         idx = self._idx
         v = torch.zeros((self.n_age * self.n_states, self.n_age * self.n_states))
         v[idx("i"), idx("i")] = self.parameters["alpha_i"]
+
         self.v_inv = torch.linalg.inv(v)
