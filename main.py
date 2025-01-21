@@ -3,8 +3,8 @@ from src.static.dataloader import DataLoader
 
 
 def main():
-    model = "british_columbia"
-    method = "svd"
+    model = "rost"
+    method = "eig_decomposition"  # alternatively "eig"
     data = DataLoader(model=model)
     runner = Runner(data=data, model=model, method=method)
     runner.run()

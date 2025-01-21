@@ -261,75 +261,74 @@ class Plotter:
         self.plot_heatmap(grads_full, plot_title, filename, folder,
                           annotate=False)
 
-    def plot_small_ngm_contact_grad_mtx(self, matrix: torch.Tensor, plot_title: str,
-                                        filename: str, folder: str,
-                                        label_axes: bool = True,
-                                        show_colorbar: bool = True):
+    def plot_r0_small_ngm_grad_mtx(self, matrix: torch.Tensor, plot_title: str,
+                    filename: str, folder: str, cmap_type: str,
+                                   label_color: str):
         """
-        Plot the matrix as a heatmap with improved aesthetics,
-        using a custom reversed green colormap.
+        General function to plot a matrix as a heatmap with customizable colormap.
+
         Args:
             matrix (torch.Tensor): The matrix to be plotted.
             plot_title (str): The title of the plot.
             filename (str): The name of the file to save the plot.
             folder (str): The directory where the plot will be saved.
-            label_axes (bool): Whether to label the axes (default is True).
-            show_colorbar (bool): Whether to display the color bar (default is True).
+            cmap_type (str): Specify the colormap type ("CM" for Contact Matrix or "NGM" for NGM).
+            label_color: Color of the text and labels.
         """
-        ngm_cont_grad = matrix.detach().numpy()
+        # Define min and max values for the color scale
+        matrix = matrix.detach().numpy()
 
-        v_min = ngm_cont_grad.min()
-        v_max = ngm_cont_grad.max()
+        v_min = matrix.min()
+        v_max = matrix.max()
 
         fig, ax = plt.subplots(figsize=(8, 8), constrained_layout=True)
 
-        # Create a heatmap with the reversed green colormap
-        cax = ax.matshow(ngm_cont_grad, cmap=self.reversed_blues_cmap, aspect='equal',
-                         vmin=v_min, vmax=v_max)
+        # Define colormaps based on cmap_type
+        if cmap_type == "CM":
+            cmap = self.reversed_blues_cmap   # Blues
+        elif cmap_type == "NGM":
+            # Define a yellow colormap for Next Generation Matrix
+            cmap = LinearSegmentedColormap.from_list(
+                "YellowRedGradient", ["#FFFFE0", "#FFD700", "#FF0000"]
+            )
+            # cmap = plt.cm.viridis
 
-        # Add a color bar if show_colorbar is True
-        if show_colorbar:
-            cbar = fig.colorbar(cax, orientation='vertical', shrink=0.71, pad=0.1)
-            cbar.ax.tick_params(labelsize=20, color='darkblue')
-            cbar.set_ticks(np.linspace(v_min, v_max, num=5))  # 5 evenly spaced ticks
-            cbar.set_ticklabels([f'{tick:.1f}' for tick in np.linspace(v_min, v_max, num=5)])
-            cbar.outline.set_visible(True)
-            cbar.outline.set_linewidth(1.5)
+        else:
+            raise ValueError("Invalid cmap_type. Use 'CM' for Contact Matrix or "
+                             "'NGM' for Next Generation Matrix.")
 
-            for tick in cbar.ax.get_yticklabels():
-                tick.set_fontsize(20)
-                tick.set_color('darkblue')
+        # Create a heatmap
+        cax = ax.matshow(matrix, cmap=cmap, aspect='equal', vmin=v_min, vmax=v_max)
+
+        # Add a color bar
+        cbar = fig.colorbar(cax, orientation='vertical', shrink=0.69, pad=0.1)
+        cbar.ax.tick_params(labelsize=20, colors=label_color)
+        cbar.set_ticks(np.linspace(v_min, v_max, num=5))  # 5 evenly spaced ticks
+        cbar.set_ticklabels([f'{tick:.2f}' for tick in np.linspace(
+            v_min, v_max, num=5)])
+        cbar.outline.set_visible(True)
+        cbar.outline.set_linewidth(1.5)
 
         # Set ticks and labels
-        alternate = self.model in ["rost", "kenya"]
-        xtick_labels = self.get_tick_labels(self.labels, alternate)
-        y_tick_labels = self.get_tick_labels(self.labels, alternate)
+        xtick_labels = self.get_tick_labels(
+            self.labels, alternate=self.model in ["rost", "seir"])
+        ytick_labels = self.get_tick_labels(
+            self.labels, alternate=self.model in ["rost", "seir"])
         ax.set_xticks(np.arange(self.n_age))
         ax.set_yticks(np.arange(self.n_age))
-        if self.model == "rost":
-            ax.set_xticklabels(xtick_labels, rotation=90, ha='center', fontsize=20,
-                               fontweight='bold', color='darkblue')
-            ax.set_yticklabels(y_tick_labels, fontsize=20, fontweight='bold',
-                               color='darkblue')
-        else:
-            ax.set_xticklabels(xtick_labels, rotation=90, ha='center', fontsize=15,
-                               fontweight='bold', color='darkblue')
-            ax.set_yticklabels(y_tick_labels, fontsize=15, fontweight='bold',
-                               color='darkblue')
+        ax.set_xticklabels(xtick_labels, rotation=90, ha='center',
+                           fontsize=20, fontweight='bold', color=label_color)
+        ax.set_yticklabels(ytick_labels, fontsize=20, fontweight='bold',
+                           color=label_color)
 
         # Ensure labels appear only on the bottom x-axis
         ax.xaxis.set_ticks_position('bottom')  # Position ticks at the bottom
         ax.xaxis.set_tick_params(labeltop=False)  # Disable top x-axis labels
-
-        # Customize axes labels if label_axes is True
-        if label_axes:
-            ax.set_xlabel("Age Infected", fontsize=20, labelpad=15,
-                          fontweight='bold', color='darkgreen')
-            ax.set_ylabel("Age Susceptible", fontsize=20, labelpad=15,
-                          fontweight='bold', color='darkgreen')
+        ax.tick_params(axis='both', which='major', length=10, width=3,
+                       labelsize=20, color=label_color)
 
         # Add a bold title
-        ax.set_title(plot_title, fontsize=25, fontweight='bold', color='darkblue')
+        ax.set_title(plot_title, fontsize=25, fontweight='bold', color=label_color)
 
         ax.invert_yaxis()
 
