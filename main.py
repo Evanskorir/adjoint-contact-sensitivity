@@ -4,9 +4,8 @@ from src.static.dataloader import DataLoader
 
 def main():
     model = "rost"
-    method = "eig_decomposition"  # alternatively "eig"
     data = DataLoader(model=model)
-    runner = Runner(data=data, model=model, method=method)
+    runner = Runner(data=data, model=model)
     runner.run()
 
 
