@@ -1,20 +1,33 @@
 import torch
 
+from scipy.linalg import eig
+
 
 class EigenCalculator:
     def __init__(self, ngm_small_tensor: torch.Tensor) -> None:
         self.ngm_small_tensor = ngm_small_tensor
 
-        self.dominant_eig_vec = None
-        self.dominant_eig_val = None
+        self.dominant_eigen_val = None
+        self.left_eigen_vec = None
+        self.right_eigen_vec = None
 
     def run(self):
-        # Compute eigenvalues and eigenvectors
-        eig_val, eig_vec = torch.linalg.eig(self.ngm_small_tensor)
+        # Compute eigenvalues and both left and right eigenvectors
+        eig_vals, left_eig_vecs, right_eig_vecs = eig(
+            self.ngm_small_tensor.detach().cpu().numpy(),
+            left=True,
+            right=True
+        )
 
-        # Find the index of the eigenvalue with the largest magnitude
-        max_eigval_idx = torch.abs(eig_val).argmax()
+        # Convert eigenvalues and eigenvectors back to PyTorch tensors
+        eig_vals = torch.from_numpy(eig_vals)
+        left_eig_vecs = torch.from_numpy(left_eig_vecs)
+        right_eig_vecs = torch.from_numpy(right_eig_vecs)
 
-        # Extract the dominant eigenvalue and its corresponding eigenvector
-        self.dominant_eig_val = eig_val[max_eigval_idx].real.item()
-        self.dominant_eig_vec = eig_vec[:, max_eigval_idx].real
+        # Find the dominant eigenvalue
+        dominant_idx = torch.argmax(torch.abs(eig_vals))
+
+        # Extract dominant eigenvalue and corresponding eigenvectors
+        self.dominant_eigen_val = eig_vals[dominant_idx].real.item()
+        self.left_eigen_vec = left_eig_vecs[:, dominant_idx].real
+        self.right_eigen_vec = right_eig_vecs[:, dominant_idx].real

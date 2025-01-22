@@ -1,5 +1,4 @@
 import os
-
 import torch
 
 from src.gradient.sensitivity_calculator import SensitivityCalculator
@@ -29,7 +28,8 @@ class Runner:
             self.susc_choices = [1.0]  # Uniform susceptibility for other models
 
         self.sensitivity_calc = SensitivityCalculator(data=self.data,
-                                                      model=self.model)
+                                                      model=self.model
+                                                      )
         self.r0_cm_grad = None
         self.r0_choices = self.sensitivity_calc.r0_choices
 
@@ -90,7 +90,7 @@ class Runner:
         self.sensitivity_calc.params.update({"beta": beta})
 
         # Scale the eigenvalue gradient by beta to get r0_cm_grad
-        self.r0_cm_grad = beta * self.sensitivity_calc.eigen_value_gradient.eig_val_cm_grad
+        self.r0_cm_grad = beta * self.sensitivity_calc.r0_cm_grad
 
     def generate_plots(self, scale_folder: str, susc: float, base_r0: float):
         """
@@ -122,7 +122,8 @@ class Runner:
             folder=contact_input_folder
         )
 
-        # Generate and plot the percentage age group contribution bar plot under model folder
+        # Generate and plot the percentage age group contribution bar plot
+        # under model folder
         bar_plot_folder = os.path.join(model_folder, "age_group_bar")
         os.makedirs(bar_plot_folder, exist_ok=True)
         plot.get_percentage_age_group_contact_list(
@@ -134,13 +135,13 @@ class Runner:
         # Generate and plot the symmetric contact matrix under the model folder
         cm_folder = os.path.join(model_folder, "CM")
         os.makedirs(cm_folder, exist_ok=True)
-        plot.plot_small_ngm_contact_grad_mtx(
+        plot.plot_r0_small_ngm_grad_mtx(
             matrix=self.sensitivity_calc.symmetric_contact_matrix,
             filename="CM.pdf",
             plot_title="Full contact",
             folder=cm_folder,
-            label_axes=False,
-            show_colorbar=True
+            cmap_type="CM",
+            label_color="darkblue"
         )
 
         # Plot the NGM matrix twice, once for susc=0.5 and once for susc=1.0
@@ -148,13 +149,13 @@ class Runner:
         os.makedirs(ngm_folder, exist_ok=True)
 
         # Plot for the current susc value, distinguished by the susc in the filename
-        plot.plot_small_ngm_contact_grad_mtx(
-            matrix=self.sensitivity_calc.ngm_small_tensor,
-            filename=f"ngm_heatmap_susc_{susc}.pdf",
-            plot_title=f"NGM for susc={susc}",
+        plot.plot_r0_small_ngm_grad_mtx(
+            matrix=self.sensitivity_calc.r0_ngm_grad,
+            filename=f"r0_ngm_susc_{susc}.pdf",
+            plot_title=f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$",
             folder=ngm_folder,
-            label_axes=True,
-            show_colorbar=True
+            cmap_type="NGM",
+            label_color="#FF0000"
         )
 
         # Plot R0 gradient matrix
