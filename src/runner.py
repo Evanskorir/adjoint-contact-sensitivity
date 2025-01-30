@@ -144,20 +144,6 @@ class Runner:
             label_color="darkblue"
         )
 
-        # Plot the NGM matrix twice, once for susc=0.5 and once for susc=1.0
-        ngm_folder = os.path.join(model_folder, "NGM")
-        os.makedirs(ngm_folder, exist_ok=True)
-
-        # Plot for the current susc value, distinguished by the susc in the filename
-        plot.plot_r0_small_ngm_grad_mtx(
-            matrix=self.sensitivity_calc.r0_ngm_grad,
-            filename=f"r0_ngm_susc_{susc}.pdf",
-            plot_title=f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$",
-            folder=ngm_folder,
-            cmap_type="NGM",
-            label_color="#FF0000"
-        )
-
         # Plot R0 gradient matrix
         plot.plot_grads(
             grads=self.r0_cm_grad,

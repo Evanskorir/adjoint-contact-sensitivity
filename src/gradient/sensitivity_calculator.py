@@ -27,7 +27,6 @@ class SensitivityCalculator:
         self.eigen_vector_left = None
         self.eigen_vector_right = None
 
-        self.r0_ngm_grad = None
         self.r0_cm_grad = None
 
         self.contact_input = None
@@ -139,15 +138,12 @@ class SensitivityCalculator:
         self.eigen_value = eigen_calculator.dominant_eigen_val
 
         eigen_value_grad = EigenValueGradient(
-            ngm_small_tensor=self.ngm_small_tensor,
+            ngm_small_grads=self.ngm_small_grads,
             left_eigen_vec=self.left_eig_vector,
             right_eigen_vec=self.right_eig_vector
         )
-        eigen_value_grad.run(ngm_small_grads=self.ngm_small_grads)
+        eigen_value_grad.run()
         self.eigen_value_gradient = eigen_value_grad
-
-        # Compute derivative of r0 w.r.t NGM with small domain
-        self.r0_ngm_grad = self.eigen_value_gradient.r0_ngm_grad
 
         # Compute derivative of r0 w.r.t contact input
         self.r0_cm_grad = self.eigen_value_gradient.r0_cm_grad

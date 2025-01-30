@@ -2,30 +2,28 @@ import torch
 
 
 class EigenValueGradient:
-    def __init__(self, ngm_small_tensor: torch.Tensor, left_eigen_vec: torch.Tensor,
+    def __init__(self, ngm_small_grads: torch.Tensor, left_eigen_vec: torch.Tensor,
                  right_eigen_vec: torch.Tensor):
 
-        self.ngm_small_tensor = ngm_small_tensor
         self.left_eig_vec = left_eigen_vec
         self.right_eig_vec = right_eigen_vec
+        self.ngm_small_grads = ngm_small_grads
 
         self.r0_cm_grad = None
-        self.r0_ngm_grad = None
 
-    def run(self, ngm_small_grads: torch.Tensor):
-        # Calculate the normalization factor (dot product of left and right eigen_vecs)
+    def run(self):
+        # Calculate v^T.w
         normalization = torch.dot(self.left_eig_vec, self.right_eig_vec)
+        # calculate v.w^T / v^T.w
+        s_ij = self.left_eig_vec.view(-1, 1) * self.right_eig_vec.view(1, -1) / \
+               normalization
 
-        # Vectorized gradient calculation with normalization before summation
-        weighted_grads = (self.left_eig_vec.view(-1, 1, 1) *  # Shape: (n_age, 1, 1)
-                          self.right_eig_vec.view(1, 1, -1) *  # Shape: (1, 1, n_age)
-                          ngm_small_grads) / normalization
+        # Add extra dimension to align for broadcasting
+        s_ij = s_ij.unsqueeze(-1)  # Shape: (16, 16, 1)
+
+        weighted_grads = torch.matmul(self.ngm_small_grads, s_ij)  # Shape: (16, 136, 1)
 
         # Sum over dimensions 0 and 2 to get r0 w.r.t cm
-        self.r0_cm_grad = weighted_grads.sum(dim=(0, 2))  # sums over dim 0 & 2
+        self.r0_cm_grad = weighted_grads.sum(dim=(0, 2))
 
-        # r0 w.r.t ngm
-        self.r0_ngm_grad = torch.outer(self.left_eig_vec, self.right_eig_vec) / \
-                           normalization
-
-        return self.r0_cm_grad, self.r0_ngm_grad
+        return self.r0_cm_grad
