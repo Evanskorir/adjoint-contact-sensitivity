@@ -78,7 +78,7 @@ class Runner:
             os.makedirs(scale_folder, exist_ok=True)
 
             # Generate plots for contact input, gradients, NGM matrix, etc.
-            self.generate_plots(scale_folder=scale_folder, susc=susc, base_r0=base_r0)
+            self.generate_plots(scale_folder=scale_folder, base_r0=base_r0)
 
     def calculate_projected_gradients(self, base_r0: float):
         """
@@ -92,13 +92,12 @@ class Runner:
         # Scale the eigenvalue gradient by beta to get r0_cm_grad
         self.r0_cm_grad = beta * self.sensitivity_calc.r0_cm_grad
 
-    def generate_plots(self, scale_folder: str, susc: float, base_r0: float):
+    def generate_plots(self, scale_folder: str, base_r0: float):
         """
         Generate various plots such as contact matrix, gradients, NGM matrix, etc.,
         and save them in the specified folder.
         Args:
             scale_folder (str): Path to the folder where plots will be saved.
-            susc (float): susc value used for the simulation.
             base_r0 (float): R0 value used for the simulation.
         """
         plot = Plotter(data=self.data, n_age=self.n_age, model=self.model)

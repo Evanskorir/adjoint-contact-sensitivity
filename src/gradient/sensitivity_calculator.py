@@ -1,16 +1,15 @@
 import src.models as models
-import src.static as static
 
-from src.aggregation import AggregationApproach
 from src.comp_graph.cm_creator import CMCreator
 from src.comp_graph.cm_elements_cg_leaf import CMElementsCGLeaf
 from src.gradient.eigen_value_gradient import EigenValueGradient
 from src.gradient.ngm_gradient import NGMGradient
 from src.static.cm.cm_leaf_preparator import CGLeafPreparator
+from src.static.eigen_calculator import EigenCalculator
 
 
 class SensitivityCalculator:
-    def __init__(self, data: static.DataLoader, model: str):
+    def __init__(self, data, model: str):
         self.data = data
         self.model = model
         self.params = self.data.model_parameters_data
@@ -23,13 +22,7 @@ class SensitivityCalculator:
         self.ngm_small_grads = None
         self.eigen_value_gradient = None
 
-        self.eigen_value = None
-        self.eigen_vector = None
-        self.eigen_vector_left = None
-        self.eigen_vector_right = None
-
         self.r0_cm_grad = None
-        self.cumulative_sensitivities = None
 
         self.contact_input = None
         self.scale_value = None
@@ -70,9 +63,6 @@ class SensitivityCalculator:
 
         # 7. Calculate eigenvalue, left and right eigenvectors, and gradients for R0
         self._calculate_eigenvectors_derivatives()
-
-        # 8. Calculate the cumulative elasticities
-        self.get_aggregated_sensitivities()
 
     def _initialize_ngm_calculator(self, params: dict):
         """
@@ -135,7 +125,7 @@ class SensitivityCalculator:
         """
         Calculate eigenvalue, left and right eigenvector, and derivatives.
         """
-        eigen_calculator = static.EigenCalculator(ngm_small_tensor=self.ngm_small_tensor)
+        eigen_calculator = EigenCalculator(ngm_small_tensor=self.ngm_small_tensor)
         eigen_calculator.run()
 
         self.left_eig_vector = eigen_calculator.left_eigen_vec
@@ -153,14 +143,6 @@ class SensitivityCalculator:
 
         # Compute derivative of r0 w.r.t contact input
         self.r0_cm_grad = self.eigen_value_gradient.r0_cm_grad
-
-    def get_aggregated_sensitivities(self):
-        cum_sensitivities = AggregationApproach(
-            left_eigen_vec=self.left_eig_vector,
-            right_eigen_vec=self.right_eig_vector
-        )
-        cumulative_sensitivities = cum_sensitivities.run()
-        self.cumulative_sensitivities = cumulative_sensitivities
 
     def _initialize_r0_choices(self):
         """

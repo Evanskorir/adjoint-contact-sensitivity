@@ -18,8 +18,9 @@ class EigenValueGradient:
         normalization = torch.dot(self.left_eig_vec, self.right_eig_vec)
 
         # calculate v.w^T / v^T.w
-        s_ij = self.left_eig_vec.view(-1, 1) * self.right_eig_vec.view(1, -1) / \
-               normalization
+        s_ij = (
+                self.left_eig_vec.view(-1, 1) * self.right_eig_vec.view(1, -1)
+                ) / normalization
 
         # Reshape to s_ij for correct broadcasting
         s_ij = s_ij.view(self.n_age, 1, self.n_age)
@@ -31,6 +32,3 @@ class EigenValueGradient:
         self.r0_cm_grad = weighted_grads.sum(dim=(0, 2))
 
         return self.r0_cm_grad
-
-
-
