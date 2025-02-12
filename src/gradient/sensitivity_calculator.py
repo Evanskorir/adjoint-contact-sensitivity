@@ -1,14 +1,15 @@
+import src.models as models
+
 from src.comp_graph.cm_creator import CMCreator
 from src.comp_graph.cm_elements_cg_leaf import CMElementsCGLeaf
 from src.gradient.eigen_value_gradient import EigenValueGradient
 from src.gradient.ngm_gradient import NGMGradient
-import src.models as models
-import src.static as static
 from src.static.cm.cm_leaf_preparator import CGLeafPreparator
+from src.static.eigen_calculator import EigenCalculator
 
 
 class SensitivityCalculator:
-    def __init__(self, data: static.DataLoader, model: str):
+    def __init__(self, data, model: str):
         self.data = data
         self.model = model
         self.params = self.data.model_parameters_data
@@ -20,8 +21,9 @@ class SensitivityCalculator:
         self.ngm_small_tensor = None
         self.ngm_small_grads = None
         self.eigen_value_gradient = None
-        self.eigen_value = None
-        self.eigen_vector = None
+
+        self.r0_cm_grad = None
+
         self.contact_input = None
         self.scale_value = None
         self.symmetric_contact_matrix = None
@@ -59,8 +61,8 @@ class SensitivityCalculator:
         # 6. Calculate gradients of the NGM
         self._calculate_ngm_gradients()
 
-        # 7. Calculate eigenvalue and eigenvalue gradients for R0
-        self._calculate_eigenvectors()
+        # 7. Calculate eigenvalue, left and right eigenvectors, and gradients for R0
+        self._calculate_eigenvectors_derivatives()
 
     def _initialize_ngm_calculator(self, params: dict):
         """
@@ -119,22 +121,28 @@ class SensitivityCalculator:
         ngm_grad.run()
         self.ngm_small_grads = ngm_grad.ngm_small_grads
 
-    def _calculate_eigenvectors(self):
+    def _calculate_eigenvectors_derivatives(self):
         """
-        Calculate the dominant eigenvalue, eigenvector, and gradients.
+        Calculate eigenvalue, left and right eigenvector, and derivatives.
         """
-        eigen_calculator = static.EigenCalculator(ngm_small_tensor=self.ngm_small_tensor)
+        eigen_calculator = EigenCalculator(ngm_small_tensor=self.ngm_small_tensor)
         eigen_calculator.run()
 
-        self.eigen_vector = eigen_calculator.dominant_eig_vec
-        self.eigen_value = eigen_calculator.dominant_eig_val
+        self.left_eig_vector = eigen_calculator.left_eigen_vec
+        self.right_eig_vector = eigen_calculator.right_eigen_vec
+        self.eigen_value = eigen_calculator.dominant_eigen_val
 
         eigen_value_grad = EigenValueGradient(
-            ngm_small_tensor=self.ngm_small_tensor,
-            dominant_eig_vec=self.eigen_vector
+            n_age=self.n_age,
+            ngm_small_grads=self.ngm_small_grads,
+            left_eigen_vec=self.left_eig_vector,
+            right_eigen_vec=self.right_eig_vector
         )
-        eigen_value_grad.run(ngm_small_grads=self.ngm_small_grads)
+        eigen_value_grad.run()
         self.eigen_value_gradient = eigen_value_grad
+
+        # Compute derivative of r0 w.r.t contact input
+        self.r0_cm_grad = self.eigen_value_gradient.r0_cm_grad
 
     def _initialize_r0_choices(self):
         """

@@ -2,21 +2,33 @@ import torch
 
 
 class EigenValueGradient:
-    def __init__(self, ngm_small_tensor: torch.Tensor, dominant_eig_vec: torch.Tensor):
-        self.ngm_small_tensor = ngm_small_tensor
-        self.dominant_eig_vec = dominant_eig_vec
+    def __init__(self, n_age: int, ngm_small_grads: torch.Tensor,
+                 left_eigen_vec: torch.Tensor,
+                 right_eigen_vec: torch.Tensor):
 
-        self.eig_val_cm_grad = None
+        self.left_eig_vec = left_eigen_vec
+        self.right_eig_vec = right_eigen_vec
+        self.ngm_small_grads = ngm_small_grads
+        self.n_age = n_age
 
-    def run(self, ngm_small_grads: torch.Tensor):
-        # Reshape self.dominant_eig_vec to be a column vector
-        eig_vec = self.dominant_eig_vec.view(-1, 1)  # Shape: [16, 1]
+        self.r0_cm_grad = None
 
-        # Compute A @ x: ngm_small_grads @ eig_vec for each slice
-        a_dot_x = torch.matmul(ngm_small_grads, eig_vec).squeeze(dim=2)  # Shape: [16, 136]
+    def run(self):
+        # Calculate v^T.w
+        normalization = torch.dot(self.left_eig_vec, self.right_eig_vec)
 
-        # Compute x.T @ A @ x
-        # Reshape x.T to match the multiplication with B
-        # get the eig_vec_transpose
-        eig_vec_transpose = self.dominant_eig_vec.T
-        self.eig_val_cm_grad = torch.matmul(eig_vec_transpose, a_dot_x)
+        # calculate v.w^T / v^T.w
+        s_ij = (
+                self.left_eig_vec.view(-1, 1) * self.right_eig_vec.view(1, -1)
+                ) / normalization
+
+        # Reshape to s_ij for correct broadcasting
+        s_ij = s_ij.view(self.n_age, 1, self.n_age)
+
+        # Element-wise multiplication
+        weighted_grads = self.ngm_small_grads * s_ij
+
+        # Sum over dimensions 0 and 2 to get r0 w.r.t cm
+        self.r0_cm_grad = weighted_grads.sum(dim=(0, 2))
+
+        return self.r0_cm_grad
