@@ -144,14 +144,6 @@ class Plotter:
             self.plot_matrix(pd.DataFrame(matrix), contact_type + " contact", v_min,
                              v_max, output_path)
 
-        # Create a lower triangular plot for the "Full" matrix
-        if "Full" in contact_data:
-            full_matrix = pd.DataFrame(contact_data["Full"])
-            mask = np.triu(np.ones_like(full_matrix, dtype=bool))  # Upper triangular mask
-            output_path = os.path.join(output_dir, f"{filename}_Full_lower_triangular.pdf")
-            self.plot_matrix(full_matrix, "Full (Lower Triangular)", v_min, v_max,
-                             output_path, mask=~mask, annotate=True)
-
     def plot_heatmap(self, data: np.ndarray, plot_title: str, filename: str,
                      folder: str, annotate: bool = True):
         """
@@ -221,25 +213,6 @@ class Plotter:
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
         plt.close()
 
-    def plot_contact_input(self, contact_input: torch.Tensor,
-                           plot_title: str, filename: str, folder: str):
-        """
-        Specific method to process contact_input and plot using plot_heatmap.
-        """
-        contact_input = contact_input.detach().numpy()
-        contact_input_full = self.create_matrix
-
-        # Fill the diagonals and right lower triangular part of the matrix
-        k = 0
-        for i in range(self.n_age):
-            for j in range(i, self.n_age):
-                contact_input_full[i, j] = contact_input[k]
-                k += 1
-
-        # Use the general plot method without annotations
-        self.plot_heatmap(contact_input_full, plot_title, filename, folder,
-                          annotate=False)
-
     def plot_grads(self, grads: torch.Tensor, plot_title: str,
                    filename: str, folder: str):
         """
@@ -285,6 +258,7 @@ class Plotter:
         # Define colormaps based on cmap_type
         if cmap_type == "CM":
             cmap = self.reversed_blues_cmap   # Blues
+
         elif cmap_type == "NGM":
             # Define a yellow colormap for Next Generation Matrix
             cmap = LinearSegmentedColormap.from_list(
@@ -341,99 +315,67 @@ class Plotter:
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
         plt.close()
 
-    def reconstruct_plot_symmetric_grad_matrix(
-            self, grad_mtx: torch.Tensor) -> torch.Tensor:
+    def plot_cumulative_sensitivities(self, cum_sensitivities: torch.Tensor,
+                                     plot_title: str, filename: str, folder: str):
         """
-        Reconstruct a symmetric grad matrix from the upper triangular elements.
-        Args: grad_mtx (torch.Tensor): Input tensor containing the upper tri elements.
-        Returns: torch.Tensor: Symmetric matrix.
-        """
-        mtx = torch.zeros((self.n_age, self.n_age))
-        upper_tri_idx = torch.triu_indices(self.n_age, self.n_age, offset=0)
-        data_flat = grad_mtx.view(-1)
+        Plot cumulative sensitivities for each age group as a bar
+         plot with color gradient,
+        horizontal and vertical grids.
 
-        mtx[upper_tri_idx[0], upper_tri_idx[1]] = data_flat
-        mtx = mtx + mtx.T - torch.diag(mtx.diag())
-        return mtx
-
-    def get_percentage_age_group_contact_list(self, symmetrized_cont_matrix: torch.Tensor,
-                                              filename: str, folder: str):
-        """
-        Calculate the percentage contribution of each age group based on a contact matrix
-        and plot the results, including error bars representing the 95% percentile interval.
         Args:
-            symmetrized_cont_matrix (np.ndarray): Symmetric contact matrix.
-            filename (str): Filename for saving the plot.
-            folder (str): Folder path to save the plot.
+            cum_sensitivities (torch.Tensor): Tensor of cum_sensitivities for
+            each age group.
+            plot_title (str): Title of the plot.
+            filename (str): Name of the file to save the plot.
+            folder (str): Directory where the plot will be saved.
         """
-
-        # Ensure the folder exists
+        # Ensure folder exists
         os.makedirs(folder, exist_ok=True)
 
-        # Detach the tensor and convert to numpy if necessary
-        if isinstance(symmetrized_cont_matrix, torch.Tensor):
-            symmetrized_cont_matrix = symmetrized_cont_matrix.detach().numpy()
+        # Convert elasticities to numpy if it's a tensor
+        if isinstance(cum_sensitivities, torch.Tensor):
+            cum_sensitivities = cum_sensitivities.detach().cpu().numpy()
 
-        # Compute the total sum of contacts for each age group
-        total_contacts = np.nansum(symmetrized_cont_matrix, axis=0)
+        # Normalize sensitivities by dividing by the sum
+        total_sensitivities = cum_sensitivities.sum()
+        normalized_sensitivities = cum_sensitivities / total_sensitivities  # Normalize to sum to 1
 
-        # Calculate the percentage contribution for each age group
-        total_sum = np.sum(total_contacts)
-        if total_sum > 0:
-            percentage_contact = (total_contacts / total_sum) * 100
-        else:
-            percentage_contact = np.zeros_like(total_contacts)
+        # Set up colormap and normalize for coloring (using Reds instead of Greens)
+        norm = plt.Normalize(vmin=normalized_sensitivities.min(),
+                             vmax=normalized_sensitivities.max())
+        cmap = plt.get_cmap("YlOrRd")
 
-        percentile_errors = percentage_contact * 0.1
+        # Assign colors based on normalized elasticities
+        colors = [cmap(norm(value)) for value in normalized_sensitivities]
 
-        # Create a colormap based on the percentage contribution using 'Greens'
-        norm = plt.Normalize(percentage_contact.min(), percentage_contact.max())
-        cmap = plt.get_cmap('Greens')
-        colors = [cmap(norm(val)) for val in percentage_contact]
-
-        # Create figure and bar plot for the data
-        fig, ax = plt.subplots(figsize=(8, 8))
+        fig, ax = plt.subplots(figsize=(10, 6))
         x_pos = np.arange(len(self.labels))
 
-        # Plot bar plots with color mapping and slight transparency
-        bars = ax.bar(x_pos, percentage_contact, align='center', width=0.7,
-                      alpha=0.9, color=colors, label="Percentage contact",
-                      edgecolor='black')
+        ax.bar(x_pos, normalized_sensitivities, align='center', alpha=0.9,
+               color=colors, edgecolor='black', zorder=3)
 
-        # Plot error bars in red for better visibility
-        ax.errorbar(x_pos, percentage_contact, yerr=percentile_errors,
-                    lw=2, capthick=2, fmt="o", color="red",
-                    markersize=2, capsize=4, ecolor="red", elinewidth=1)
+        ax.tick_params(axis='y', which='both', left=False, right=False,
+                       labelsize=15, labelcolor='darkred')
+        ax.tick_params(axis='x', which='both', bottom=True, top=False,
+                       labelsize=15, width=2, length=8, color='darkred')
 
-        # Annotate bars with percentage values, position slightly above the bars
-        for bar in bars:
-            height = bar.get_height()
-            ax.annotate(f'{height:.1f}%',
-                        xy=(bar.get_x() + bar.get_width() / 2, height),
-                        xytext=(5, 3),  # Offset the annotation slightly above the bar
-                        textcoords="offset points",
-                        ha='left', va='bottom', fontsize=7, color='black')
-
-        # Customize plot aesthetics
-        ax.grid(axis='y', linestyle='--', alpha=0.7)  # Add grid lines only on the y-axis
-
-        # Rotate x-axis labels for better readability
-        ax.set_xticks(x_pos)
-        ax.set_xticklabels(self.labels, rotation=45, ha='center', fontsize=12,
-                           fontweight='bold')
-        ax.set_xlabel("Age Classes", fontsize=16, fontweight="bold")
-        ax.set_ylabel("Percentage Contact", fontsize=16, fontweight="bold")
-
-        # Add borders to the plot
         for spine in ax.spines.values():
-            spine.set_visible(True)
-            spine.set_color('darkgreen')
-            spine.set_linewidth(2)
+            spine.set_visible(False)
 
-        # Adjust the layout for better spacing
+        # ax.grid(axis='y', linestyle='--', linewidth=0.1, alpha=0.5, zorder=1)
+        # ax.grid(axis='x', linestyle='--', linewidth=0.1, alpha=0.5, zorder=1)
+
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(self.labels, rotation=45, ha='center', fontsize=15,
+                           fontweight='bold', color='darkred')
+
+        ax.set_ylabel(r"Cumulative sensitivities $\tilde{s}_j$", fontsize=15,
+                      fontweight="bold", color='darkred')
+        ax.set_title(plot_title, fontsize=22, pad=20, fontweight="bold", color='darkred')
         plt.tight_layout()
-
-        # Save the figure
         save_path = os.path.join(folder, f"{filename}.pdf")
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
         plt.close()
+
+
+
