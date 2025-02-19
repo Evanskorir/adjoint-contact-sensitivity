@@ -136,7 +136,8 @@ class Plotter:
         # Determine global v_min and v_max across all contact matrices
         all_values = np.concatenate([contact_data[contact_type].flatten() for
                                      contact_type in contact_data.keys()])
-        v_min, v_max = all_values.min(), all_values.max()
+        # v_min, v_max = all_values.min(), all_values.max()
+        v_min, v_max = np.min(all_values), np.max(all_values)
 
         # Plot each contact matrix
         for contact_type, matrix in contact_data.items():
@@ -376,6 +377,3 @@ class Plotter:
         save_path = os.path.join(folder, f"{filename}.pdf")
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
         plt.close()
-
-
-
