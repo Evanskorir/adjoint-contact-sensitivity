@@ -152,9 +152,7 @@ class SensitivityCalculator:
     def get_aggregated_sensitivities(self):
         agg_sens = AggregationApproach(
             n_age=self.n_age,
-            ngm_small_grads=self.ngm_small_grads,
-            left_eigen_vec=self.left_eig_vector,
-            right_eigen_vec=self.right_eig_vector
+            r0_cm_grad=self.r0_cm_grad
         )
         cum_sens = agg_sens.run()
         self.cum_sens = cum_sens

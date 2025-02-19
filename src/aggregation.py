@@ -2,36 +2,32 @@ import torch
 
 
 class AggregationApproach:
-    def __init__(self, n_age: int, ngm_small_grads: torch.Tensor,
-                 left_eigen_vec: torch.Tensor,
-                 right_eigen_vec: torch.Tensor):
+    def __init__(self, n_age: int, r0_cm_grad: torch.Tensor):
 
-        self.left_eig_vec = left_eigen_vec
-        self.right_eig_vec = right_eigen_vec
-        self.ngm_small_grads = ngm_small_grads
         self.n_age = n_age
+        self.r0_cm_grad = r0_cm_grad
 
         self.cum_sens = None
 
+    def reconstruct_symmetric_matrix(self) -> torch.Tensor:
+        """
+        Reconstruct a symmetric matrix from the upper triangular elements.
+        Returns: torch.Tensor: Symmetric matrix of shape (n_age, n_age).
+        """
+        mtx = torch.zeros((self.n_age, self.n_age), device=self.r0_cm_grad.device)
+        upper_tri_indices = torch.triu_indices(self.n_age, self.n_age)
+
+        mtx[upper_tri_indices[0], upper_tri_indices[1]] = self.r0_cm_grad.view(-1)
+        mtx = mtx + mtx.T - torch.diag(mtx.diag())
+
+        return mtx
+
     def run(self) -> torch.Tensor:
         """
-        Compute cumulative sensitivities (e_j) for each age group
-        :return: Aggregated sensitivities for each age group
+        Compute cumulative sensitivities (s_j) for each age group.
+        Returns: torch.Tensor: Aggregated sensitivities for each age group (size n_age).
         """
-        # Compute normalization factor (v^T w)
-        normalization = torch.dot(self.left_eig_vec, self.right_eig_vec)
-
-        # Compute S_ij = (v_i * w_j) / (v^T w)
-        s_ij = (
-                self.left_eig_vec.view(-1, 1) * self.right_eig_vec.view(1, -1)
-              ) / normalization
-
-        s_ij = s_ij.view(self.n_age, 1, self.n_age)
-
-        # Apply the derivative ∂K/∂c_p
-        weighted_sens = s_ij * self.ngm_small_grads
-
-        # Sum over dimensions 1 and 2
-        self.cum_sens = weighted_sens.sum(dim=(1, 2))
+        sym_matrix = self.reconstruct_symmetric_matrix()
+        self.cum_sens = sym_matrix.sum(dim=1)  # Summing over rows
 
         return self.cum_sens
