@@ -147,9 +147,9 @@ generated/model
      │    └── CM.pdf # Visualizes the symmetric contact input as matrix using the selected scaling.    
      ├── contact_matrices
      │    └── contact_matrices.pdf # Visualizes the contact matrices at Home, School, Work, Other, and Full.
-     ├── results_base_r0_susc
-     │    ├── cum_sens.pdf # Shows the cumulative sensitivity heatmap    
-     │    └──  Grads_tri.pdf # Shows the gradients with different base R0s and susc as upper tri elements.
+     └── results_base_r0_susc
+          ├── cum_sens.pdf # Shows the cumulative sensitivity heatmap    
+          └──  Grads_tri.pdf # Shows the gradients with different base R0s and susc as upper tri elements.
 ```
 
 ## Requirement
