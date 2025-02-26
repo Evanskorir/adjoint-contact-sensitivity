@@ -111,26 +111,6 @@ class Runner:
                                    model=self.model,
                                    filename="contact_matrices")
 
-        # Plot contact input matrix and save it under the model folder only (not in scale folder)
-        contact_input_folder = os.path.join(model_folder, "contact_input")
-        os.makedirs(contact_input_folder, exist_ok=True)
-        plot.plot_contact_input(
-            contact_input=self.sensitivity_calc.contact_input,
-            plot_title="",
-            filename="contact_input.pdf",
-            folder=contact_input_folder
-        )
-
-        # Generate and plot the percentage age group contribution bar plot
-        # under model folder
-        bar_plot_folder = os.path.join(model_folder, "age_group_bar")
-        os.makedirs(bar_plot_folder, exist_ok=True)
-        plot.get_percentage_age_group_contact_list(
-            symmetrized_cont_matrix=self.sensitivity_calc.symmetric_contact_matrix,
-            filename="age_group_percentage_bar_plot.pdf",
-            folder=bar_plot_folder
-        )
-
         # Generate and plot the symmetric contact matrix under the model folder
         cm_folder = os.path.join(model_folder, "CM")
         os.makedirs(cm_folder, exist_ok=True)
@@ -148,5 +128,13 @@ class Runner:
             grads=self.r0_cm_grad,
             plot_title=f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$",
             filename="Grads_tri.pdf",
+            folder=scale_folder
+        )
+
+        # Plot cumulative sensitivities
+        plot.plot_cumulative_sensitivities(
+            cum_sensitivities=self.sensitivity_calc.cum_sens,
+            plot_title=f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$",
+            filename=f"cum_sens",
             folder=scale_folder
         )
