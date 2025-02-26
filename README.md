@@ -74,9 +74,9 @@ src
  │   │   ├── e_matrix_calculator
  │   │   ├── ngm_calculator_base 
  │   │   └── v_matrix_calculator_base
- │   ├── dataloader     
+ │   ├── aggregation       
+ │   ├── dataloader
  │   └── eigen_calculator
- ├── aggregation  
  ├── plotter               
  └── runner
 main 
