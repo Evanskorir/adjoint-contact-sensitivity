@@ -110,7 +110,8 @@ class DataLoader:
             return self._labels_file
         return os.path.join(PROJECT_PATH, "../data",
                             f"{self.model}_{file_type}.json" if
-                            file_type == "model_parameters" else f"{self.model}_{file_type}.xls")
+                            file_type == "model_parameters" else
+                            f"{self.model}_{file_type}.xls")
 
     @staticmethod
     def _download_file(file_type, file_id, filename):
@@ -146,7 +147,7 @@ class DataLoader:
         wb = xlrd.open_workbook(self._contact_data_file)
         contact_matrices = {}
         num_sheets = 1 if self.model in ["british_columbia", "washington"] else (
-            2 if self.model in ["italy", "moghadas", "seir"] else 4)
+            2 if self.model in ["italy", "moghadas", "seir", "seir_agg"] else 4)
 
         for idx in range(num_sheets):
             sheet = wb.sheet_by_index(idx)

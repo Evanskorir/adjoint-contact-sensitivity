@@ -12,8 +12,11 @@ model_calc_map = {
     "chikina": ChikinaNGMCalculator,
     "italy": ItalyNGMCalculator,
     "kenya": KenyaNGMCalculator,
+    "kenya_agg": KenyaNGMCalculator,
     "moghadas": MoghadasNGMCalculator,
     "rost": RostNGMCalculator,
+    "rost_agg": RostNGMCalculator,
     "seir": SeirNGMCalculator,
+    "seir_agg": SeirNGMCalculator,
     "washington": WashingtonGMCalculator
 }

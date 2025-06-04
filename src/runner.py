@@ -7,7 +7,8 @@ from src.static.dataloader import DataLoader
 
 
 class Runner:
-    def __init__(self, data: DataLoader, model: str):
+    def __init__(self, data: DataLoader, model: str, target: str,
+                 use_ngm_elasticity: bool = False, use_cm_elasticity: bool = False):
         """
         Initialize the simulation with the provided data.
         Args: data (DataLoader): DataLoader object containing age data and model params.
@@ -18,8 +19,12 @@ class Runner:
         self.model = model
         self.labels = self.data.labels
 
+        self.target = target
+        self.use_ngm_elasticity = use_ngm_elasticity
+        self.use_cm_elasticity = use_cm_elasticity
+
         # Dynamically set susceptibility choices
-        self.model_age_ranges = {"british_columbia": 3, "rost": 4}
+        self.model_age_ranges = {"rost_agg": 2, "british_columbia": 3, "rost": 4}
 
         # Determine susceptibility choices based on the model
         if self.model in self.model_age_ranges:
@@ -27,9 +32,11 @@ class Runner:
         else:
             self.susc_choices = [1.0]  # Uniform susceptibility for other models
 
-        self.sensitivity_calc = SensitivityCalculator(data=self.data,
-                                                      model=self.model
-                                                      )
+        self.sensitivity_calc = SensitivityCalculator(
+            data=self.data, model=self.model, target=self.target,
+            use_ngm_elasticity=use_ngm_elasticity,
+            use_cm_elasticity=self.use_cm_elasticity
+        )
         self.r0_cm_grad = None
         self.r0_choices = self.sensitivity_calc.r0_choices
 
@@ -55,7 +62,8 @@ class Runner:
                 self.sensitivity_calc.params.update({"susc": susceptibility})
 
                 # Run sensitivity calculation for the current scale and parameters
-                self.sensitivity_calc.run(scale=scale, params=self.sensitivity_calc.params)
+                self.sensitivity_calc.run(scale=scale,
+                                          params=self.sensitivity_calc.params)
 
                 # Create plots and process the results
                 self.create_plots(scale=scale, susc=susc)
@@ -70,7 +78,8 @@ class Runner:
             self.calculate_projected_gradients(base_r0=base_r0)
 
             # Create folder structure for saving plots
-            folder = f"generated/{self.model}/results_base_r0_{base_r0:.1f}_susc_{susc:.1f}"
+            folder = f"generated/{self.model}/{self.target}/" \
+                     f"results_base_r0_{base_r0:.1f}_susc_{susc:.1f}"
             os.makedirs(folder, exist_ok=True)
 
             # Create sub_folder for each scale
@@ -122,6 +131,20 @@ class Runner:
             cmap_type="CM",
             label_color="darkblue"
         )
+
+        # Plot non-aggregated age group distributions
+        if self.model in ["kenya", "rost"]:
+            age_dist_folder = os.path.join(model_folder, "AgeDist")
+            os.makedirs(age_dist_folder, exist_ok=True)
+
+            kenya_data = DataLoader(model="kenya")
+            hungary_data = DataLoader(model="rost")
+
+            plot.plot_side_by_side_age_distribution(
+                kenya_pop=kenya_data.age_data,
+                hungary_pop=hungary_data.age_data,
+                output_path=os.path.join(age_dist_folder, "kenya_vs_hungary_pop.pdf")
+            )
 
         # Plot R0 gradient matrix
         plot.plot_grads(

@@ -1,21 +1,29 @@
 import src.models as models
 
-from src.aggregation import AggregationApproach
+from src.static.aggregation import AggregationApproach
 from src.comp_graph.cm_creator import CMCreator
 from src.comp_graph.cm_elements_cg_leaf import CMElementsCGLeaf
 from src.gradient.eigen_value_gradient import EigenValueGradient
 from src.gradient.ngm_gradient import NGMGradient
 from src.static.cm.cm_leaf_preparator import CGLeafPreparator
 from src.static.eigen_calculator import EigenCalculator
+from src.static.contact_mtx_eigen import ContactMatrixEigenCalculator
+from src.static.outcome_transition_params import OutcomeTransitionParameters
 
 
 class SensitivityCalculator:
-    def __init__(self, data, model: str):
+    def __init__(self, data, model: str, target: str = "deaths",
+                 use_ngm_elasticity: bool = False, use_cm_elasticity: bool = False):
         self.data = data
         self.model = model
         self.params = self.data.model_parameters_data
         self.population = self.data.age_data
         self.n_age = len(self.population)
+        self.target = target
+
+        # scaling options
+        self.use_ngm_elasticity = use_ngm_elasticity
+        self.use_cm_elasticity = use_cm_elasticity
 
         # Initialize placeholders for calculated values
         self.ngm_calculator = None
@@ -30,6 +38,11 @@ class SensitivityCalculator:
         self.scale_value = None
         self.symmetric_contact_matrix = None
 
+        self.outcome_transitions = OutcomeTransitionParameters(
+            params=self.params, n_age=self.n_age, model=model
+        )
+        self.outcome_ngm_transformer = None
+
         self._initialize_r0_choices()
         self._select_ngm_calculator()
 
@@ -38,8 +51,6 @@ class SensitivityCalculator:
         Select the appropriate NGMCalculator based on the model name.
         """
         self.ngm_calculator_class = models.model_calc_map.get(self.model)
-        if not self.ngm_calculator_class:
-            raise ValueError(f"Unknown model: {self.model}")
 
     def run(self, scale: str, params: dict):
         """
@@ -63,6 +74,9 @@ class SensitivityCalculator:
         # 6. Calculate gradients of the NGM
         self._calculate_ngm_gradients()
 
+        # get Contact matrix dominant eigen value
+        self._calculate_contact_matrix_eigenvalue()
+
         # 7. Calculate eigenvalue, left and right eigenvectors, and gradients for R0
         self._calculate_eigenvectors_derivatives()
 
@@ -73,7 +87,8 @@ class SensitivityCalculator:
         """
         Initialize the NGM calculator with the given parameters.
         """
-        self.ngm_calculator = self.ngm_calculator_class(n_age=self.n_age, param=params)
+        self.ngm_calculator = self.ngm_calculator_class(n_age=self.n_age,
+                                                        param=params)
 
     def _create_leaf(self, scale: str):
         """
@@ -109,11 +124,12 @@ class SensitivityCalculator:
         self.symmetric_contact_matrix = cm_creator.cm
 
     def _compute_ngm(self):
-        """
-        Compute the next generation matrix (NGM).
-        """
         self.ngm_calculator.run(symmetric_contact_mtx=self.symmetric_contact_matrix)
-        self.ngm_small_tensor = self.ngm_calculator.ngm_small_tensor
+        base_ngm = self.ngm_calculator.ngm_small_tensor
+
+        transformed_ngm = self.outcome_transitions.apply(base_ngm, outcome=self.target)
+
+        self.ngm_small_tensor = transformed_ngm
 
     def _calculate_ngm_gradients(self):
         """
@@ -125,6 +141,10 @@ class SensitivityCalculator:
         )
         ngm_grad.run()
         self.ngm_small_grads = ngm_grad.ngm_small_grads
+
+    def _calculate_contact_matrix_eigenvalue(self):
+        cm_eig = ContactMatrixEigenCalculator(self.symmetric_contact_matrix)
+        self.cm_dom_eigenvalue = cm_eig.run()
 
     def _calculate_eigenvectors_derivatives(self):
         """
@@ -147,7 +167,20 @@ class SensitivityCalculator:
         self.eigen_value_gradient = eigen_value_grad
 
         # Compute derivative of r0 w.r.t contact input
-        self.r0_cm_grad = self.eigen_value_gradient.r0_cm_grad
+        r0_cm_grad = self.eigen_value_gradient.r0_cm_grad
+
+        # introduce scaling using contact matrix and NGM R0
+        elasticity_ngm = (self.contact_input / self.eigen_value) * r0_cm_grad
+
+        # introduce scaling using Contact matrix and CM R0
+        elasticity_cm = (self.contact_input / self.cm_dom_eigenvalue) * r0_cm_grad
+
+        if self.use_ngm_elasticity:
+            self.r0_cm_grad = elasticity_ngm
+        elif self.use_cm_elasticity:
+            self.r0_cm_grad = elasticity_cm
+        else:
+            self.r0_cm_grad = r0_cm_grad
 
     def get_aggregated_sensitivities(self):
         agg_sens = AggregationApproach(
@@ -163,9 +196,12 @@ class SensitivityCalculator:
         """
         r0_mapping = {
             "british_columbia": [1.2],
-            "kenya": [1.78],
+            "kenya": [2.5],
+            "kenya_agg": [2.5],
             "rost": [1.8],
+            "rost_agg": [1.8],
             "washington": [5.7],
             "seir": [1.8],
+            "seir_agg": [1.8]
         }
         self.r0_choices = r0_mapping.get(self.model, [2.2])

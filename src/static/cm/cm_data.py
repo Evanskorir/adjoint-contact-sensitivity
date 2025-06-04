@@ -16,7 +16,8 @@ class CMData:
 
     def load_contact_matrix(self) -> torch.Tensor:
         contact_data = self.data.contact_data
-        if self.model in ["seir", "italy", "british_columbia", "moghadas", "washington"]:
+        if self.model in ["seir", "seir_agg", "italy", "british_columbia",
+                          "moghadas", "washington"]:
             full_orig_cm = contact_data["All"]
 
         else:

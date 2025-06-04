@@ -6,16 +6,37 @@ import pandas as pd
 import seaborn as sns
 import torch
 
+from matplotlib.ticker import MaxNLocator, FormatStrFormatter
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib import cm
+from matplotlib.colors import LogNorm
 from matplotlib.colors import LinearSegmentedColormap
+import matplotlib as mpl
+mpl.rcParams['text.usetex'] = True
+mpl.rcParams['font.family'] = 'serif'
+mpl.rcParams['text.latex.preamble'] = r'\usepackage{mathpzc} \usepackage{amsmath}'
+
 matplotlib.use('agg')
+plt.rcParams.update({
+    "text.usetex": True,
+    "text.latex.preamble": r"""
+        \usepackage{amsmath, amssymb, mathrsfs, textcomp}
+        \DeclareMathAlphabet{\mathpzc}{OT1}{pzc}{m}{it}
+    """
+})
 
 
 class Plotter:
     def __init__(self, data, n_age: int, model) -> None:
         self.data = data
         self.n_age = n_age
-        self.labels = data.labels
+
         self.model = model
+        if self.model == "british_columbia":
+            self.labels = [r"$<2$", "2-5", "6-17", "18-24", "25-34", "35-44",
+                           "45-54", "55-64", "65-74", "75+"]
+        else:
+            self.labels = data.labels
 
         # Create data matrix
         self.create_matrix = np.zeros((self.n_age, self.n_age)) * np.nan
@@ -25,8 +46,8 @@ class Plotter:
                        "#2171b5", "#08306b"]
         self.reversed_blues_cmap = LinearSegmentedColormap.from_list(
             "ReversedBlues", blue_colors)
-        # Custom reversed green colormap: light green for low values,
-        # dark green for high values
+
+        # Custom reversed green colormap
         green_colors = ["#f7fcf5", "#c7e9c0", "#74c476",
                         "#238b45", "#00441b"]
         self.reversed_greens_cmap = LinearSegmentedColormap.from_list(
@@ -34,8 +55,6 @@ class Plotter:
 
     @staticmethod
     def save_figure(ax, output_path):
-        for spine in ax.spines.values():
-            spine.set_visible(False)
         plt.savefig(output_path, format="pdf", bbox_inches='tight')
         plt.close()
 
@@ -56,26 +75,21 @@ class Plotter:
             alternate = self.model == "rost"
             xtick_labels = self.get_tick_labels(self.labels, alternate)
             y_tick_labels = self.get_tick_labels(self.labels, alternate)
-            ax.set_xticklabels(xtick_labels, fontsize=20, fontweight='bold',
-                               rotation=90, ha='center', color='darkblue')
-            ax.set_yticklabels(y_tick_labels, fontsize=20, fontweight='bold',
-                               rotation=0, va='center', color='darkblue')
+            ax.set_xticklabels(xtick_labels, fontsize=20,
+                               rotation=90, ha='center', color='black')
+            ax.set_yticklabels(y_tick_labels, fontsize=20,
+                               rotation=0, va='center', color='black')
         else:
-            ax.set_xticklabels(self.labels, fontsize=20, fontweight='bold',
-                               rotation=45, ha='center', color='darkblue')
-            ax.set_yticklabels(self.labels, fontsize=20, fontweight='bold',
-                               ha='center', color='darkblue')
+            ax.set_xticklabels(self.labels, fontsize=20,
+                               rotation=45, ha='center', color='black')
+            ax.set_yticklabels(self.labels, fontsize=20,
+                               ha='center', color='black')
 
         # Adjust tick mark size and appearance
         ax.tick_params(axis='both', which='major', length=10, width=3,
-                       labelsize=20, color='darkblue')
-
+                       labelsize=20, color='black')
         # Invert y-axis for better orientation
         ax.invert_yaxis()
-
-        # Hide spines for a cleaner plot
-        for spine in ax.spines.values():
-            spine.set_visible(False)
 
     def setup_axes(self, ax, label_axes=True):
         """
@@ -87,68 +101,145 @@ class Plotter:
 
         # Customize axes based on label_axes flag
         if label_axes:
-            ax.set_xlabel("Age Infected", fontsize=18, labelpad=15,
-                          fontweight='bold', color='darkgreen')
-            ax.set_ylabel("Age Susceptible", fontsize=18, labelpad=15,
-                          fontweight='bold', color='darkgreen')
+            ax.set_xlabel("Age Infected", fontsize=18, labelpad=15, color='black')
+            ax.set_ylabel("Age Susceptible", fontsize=18, labelpad=15, color='black')
+
         else:
             ax.set_xticklabels(self.labels, rotation=45, ha='center',
-                               fontsize=15, fontweight='bold', color='darkblue')
-            ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold',
-                               color='darkblue')
-
-        ax.xaxis.set_ticks_position('bottom')  # Keep ticks at the bottom
-        ax.xaxis.set_tick_params(labeltop=False)  # Hide top labels
-        ax.invert_yaxis()  # Reverse y-axis for better orientation
+                               fontsize=15, color='black')
+            ax.set_yticklabels(self.labels, fontsize=15,
+                               color='black')
+        ax.invert_yaxis()
 
         # Remove spines for a clean look
         for spine in ax.spines.values():
             spine.set_visible(False)
 
-    def plot_matrix(self, matrix, title, v_min, v_max, output_path, mask=None,
-                    annotate=False):
-        """Helper function to plot a single contact matrix."""
-        plt.figure(figsize=(8, 8))
-        ax = sns.heatmap(matrix, cmap=self.reversed_blues_cmap, square=True,
-                         vmin=v_min, vmax=v_max,
-                         annot=annotate, fmt=".1f", mask=mask, cbar=False)
-        ax.set_aspect("equal")
+    def plot_matrix(self, matrix, title, v_min, v_max, output_path,
+                    mask=None, annotate=False, show_cbar=False, norm=None):
+        """Plot a contact matrix with a shared log scale and optional colorbar."""
+        matrix = matrix.copy()
+        matrix[matrix <= 0] = np.nanmin(matrix[matrix > 0]) / 10
 
-        # Style axes and add title
+        fig, ax = plt.subplots(figsize=(8, 8))
+
+        sns.heatmap(
+            matrix,
+            cmap=self.reversed_blues_cmap,
+            square=True,
+            norm=norm,
+            annot=annotate,
+            fmt=".1f",
+            mask=mask,
+            cbar=False,
+            ax=ax
+        )
+        if show_cbar:
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="3%", pad=0.2)
+            sm = cm.ScalarMappable(norm=norm, cmap=self.reversed_blues_cmap)
+            sm.set_array([])
+            cbar = fig.colorbar(sm, cax=cax)
+            cbar.ax.tick_params(labelsize=30, width=2, length=8)
+            cbar.ax.yaxis.set_label_position('right')
+            cbar.ax.yaxis.set_ticks_position('right')
+            cbar.set_label("Avg. num. contacts", fontsize=25,
+                           labelpad=10, color="black")
+
         self.style_axes(ax)
-        plt.title(title, fontsize=25, fontweight="bold", color='darkblue')
 
-        # Save the figure
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(True)
+        ax.spines["left"].set_linewidth(1.5)
+        ax.spines["left"].set_color("black")
+        ax.spines["bottom"].set_visible(True)
+        ax.spines["bottom"].set_linewidth(1.5)
+        ax.spines["bottom"].set_color("black")
+
+        ax.set_title(title, fontsize=25, color='black')
+
+        plt.tight_layout()
         self.save_figure(ax, output_path)
 
     def plot_contact_matrices(self, contact_data, filename, model):
         """
-        Plot contact matrices for different settings and save them in a subdirectory.
+        Plot contact matrices with shared log color scale.
+        Colorbar is only displayed for 'Full' contact matrix but applies to all.
         """
         output_dir = f"generated/{model}/contact_matrices"
         os.makedirs(output_dir, exist_ok=True)
 
-        # Calculate the 'Full' contact matrix by summing all matrices except "Full"
-        contact_full = np.array([contact_data[i] for i in
-                                 contact_data.keys() if i != "Full"]).sum(axis=0)
+        contact_full = np.sum(
+            [contact_data[key] for key in contact_data if key != "Full"], axis=0
+        )
         contact_data["Full"] = contact_full
-
-        # Determine global v_min and v_max across all contact matrices
-        all_values = np.concatenate([contact_data[contact_type].flatten() for
-                                     contact_type in contact_data.keys()])
-        # v_min, v_max = all_values.min(), all_values.max()
-        v_min, v_max = np.min(all_values), np.max(all_values)
-
-        # Plot each contact matrix
+        all_values = np.concatenate([mat.flatten() for mat in contact_data.values()])
+        v_min = np.nanmin(all_values[all_values > 0])
+        v_max = np.nanmax(all_values)
+        norm = LogNorm(vmin=max(v_min, 1e-3), vmax=v_max)
         for contact_type, matrix in contact_data.items():
             output_path = os.path.join(output_dir, f"{filename}_{contact_type}.pdf")
-            self.plot_matrix(pd.DataFrame(matrix), contact_type + " contact", v_min,
-                             v_max, output_path)
+            self.plot_matrix(
+                pd.DataFrame(matrix),
+                title=f"{contact_type} contact",
+                v_min=norm.vmin,
+                v_max=norm.vmax,
+                output_path=output_path,
+                show_cbar=(contact_type == "Full"),
+                norm=norm
+            )
+
+    def plot_side_by_side_age_distribution(self, kenya_pop: torch.Tensor,
+                                           hungary_pop: torch.Tensor,
+                                           output_path: str):
+
+        mpl.rcParams.update({
+            "axes.spines.top": False,
+            "axes.spines.right": False,
+            "axes.spines.bottom": False,
+            "axes.spines.left": True,
+            "axes.edgecolor": "black",
+            "axes.linewidth": 0.8,
+            "font.size": 15
+        })
+
+        kenya_pop = kenya_pop.detach().cpu().numpy()
+        hungary_pop = hungary_pop.detach().cpu().numpy()
+
+        age_labels = self.labels
+        n = len(age_labels)
+        x = np.arange(n)
+
+        bar_width = 0.2
+        spacing = bar_width
+
+        fig, ax = plt.subplots(figsize=(9, 4))
+
+        ax.bar(x - spacing / 2, kenya_pop, width=bar_width,
+               color='cyan', edgecolor='black', linewidth=0.4, label="Kenya")
+        ax.bar(x + spacing / 2, hungary_pop, width=bar_width,
+               color='orange', edgecolor='black', linewidth=0.4, label="Hungary")
+
+        ax.set_ylabel("Population", fontsize=20, fontweight='bold')
+        ax.tick_params(axis='y', which='both', length=5, width=1.0,
+                       direction='out', labelsize=15)
+
+        ax.set_xticklabels(age_labels, rotation=45, ha='center', fontsize=15)
+        ax.tick_params(axis='x', which='both', length=0)
+        ax.set_xticks(x)
+
+        ax.legend(loc="upper right", fontsize=15)
+
+        plt.tight_layout()
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        plt.savefig(output_path, format="pdf", dpi=400, bbox_inches='tight')
+        plt.close()
 
     def plot_heatmap(self, data: np.ndarray, plot_title: str, filename: str,
                      folder: str, annotate: bool = True):
         """
-        Method to plot a heatmap with a polished, reversed green colormap, clean layout,
+        Method to plot a heatmap
         and enhanced annotations.
         """
         # Create a mask for the lower triangular part (excluding the diagonal)
@@ -160,16 +251,26 @@ class Plotter:
         cax = ax.imshow(data_masked, cmap=self.reversed_greens_cmap, aspect='auto',
                         vmin=float(np.nanmin(data)),
                         vmax=float(np.nanmax(data)))
-        cbar_ax = fig.add_axes((1.05, 0.2, 0.03, 0.6))  # [left, bottom, width, height]
+
+        # Custom colorbar axis position
+        cbar_ax = fig.add_axes((1.05, 0.2, 0.05, 0.6))
         cbar = fig.colorbar(cax, cax=cbar_ax)
-        cbar.ax.tick_params(labelsize=14, colors="darkgreen")
+
+        # Reduce tick clutter
+        cbar.locator = MaxNLocator(nbins=4)
+        cbar.update_ticks()
+        cbar.ax.yaxis.set_major_formatter(FormatStrFormatter("%.2f"))
+
+        # Style
+        cbar.ax.tick_params(labelsize=20, colors="darkgreen")
         cbar.outline.set_visible(True)
-        cbar.outline.set_linewidth(1.5)
+        cbar.outline.set_linewidth(0.8)
+        cbar.outline.set_edgecolor("darkgreen")
 
         # Additional colorbar aesthetics
         for tick in cbar.ax.get_yticklabels():
-            tick.set_fontsize(12)
-            tick.set_color("darkgreen")
+            tick.set_fontsize(30)
+            tick.set_color("black")
 
         # Remove spines for a clean look
         for spine in ax.spines.values():
@@ -181,32 +282,33 @@ class Plotter:
 
         # Set the x-axis labels (horizontal) at the bottom with bold green formatting
         ax.set_xticklabels(self.labels, rotation=90, ha='center',
-                           fontsize=15, fontweight='bold', color='darkgreen')
+                           fontsize=20, color='black', usetex=False)
 
         # Set the y-axis labels (vertical) on the right side with bold green formatting
-        ax.set_yticklabels(self.labels, fontsize=15, fontweight='bold', color='darkgreen')
+        ax.set_yticklabels(self.labels, fontsize=20, color='black', usetex=False)
 
-        # Move y-axis labels to the right side and ensure alignment with grid boxes
         ax.yaxis.set_label_position('right')
         ax.yaxis.tick_right()
 
-        # Add axis labels and title with enhanced fonts
-        ax.set_title(plot_title, fontsize=22, pad=20, fontweight='bold',
-                     color='darkgreen')
+        ax.tick_params(axis='both', which='both', bottom=True, top=False,
+                       labelsize=20, width=2, length=8, color='black')
 
-        # Optionally annotate heatmap cells with the values
+        # Add axis labels and title with enhanced fonts
+        ax.set_title(plot_title, fontsize=30, pad=20, fontweight='bold',
+                     color='black')
+
         if annotate:
             for i in range(self.n_age):
                 for j in range(i, self.n_age):
                     if not np.isnan(data[i, j]):
-                        text_color = 'white' if data[i, j] > (np.nanmax(data) / 2) else 'black'
+                        text_color = 'white' if data[i, j] > (np.nanmax(data) /
+                                                              2) else 'black'
                         ax.text(j, i, f'{data[i, j]:.2f}', ha='center', va='center',
                                 color=text_color, fontsize=12, fontweight='bold')
 
         # Invert y-axis to keep the original matrix orientation
         ax.invert_yaxis()
 
-        # Save the figure with proper file paths
         plt.subplots_adjust(right=0.85)
         plt.tight_layout()
         os.makedirs(folder, exist_ok=True)
@@ -239,13 +341,13 @@ class Plotter:
                                    label_color: str):
         """
         General function to plot a matrix as a heatmap with customizable colormap.
-
         Args:
             matrix (torch.Tensor): The matrix to be plotted.
             plot_title (str): The title of the plot.
             filename (str): The name of the file to save the plot.
             folder (str): The directory where the plot will be saved.
-            cmap_type (str): Specify the colormap type ("CM" for Contact Matrix or "NGM" for NGM).
+            cmap_type (str): Specify the colormap type ("CM" for Contact Matrix
+            or "NGM" for NGM).
             label_color: Color of the text and labels.
         """
         # Define min and max values for the color scale
@@ -259,14 +361,13 @@ class Plotter:
         # Define colormaps based on cmap_type
         if cmap_type == "CM":
             cmap = self.reversed_blues_cmap   # Blues
+            # cmap = "jet"
 
         elif cmap_type == "NGM":
             # Define a yellow colormap for Next Generation Matrix
             cmap = LinearSegmentedColormap.from_list(
                 "YellowRedGradient", ["#FFFFE0", "#FFD700", "#FF0000"]
             )
-            # cmap = plt.cm.viridis
-
         else:
             raise ValueError("Invalid cmap_type. Use 'CM' for Contact Matrix or "
                              "'NGM' for Next Generation Matrix.")
@@ -275,13 +376,12 @@ class Plotter:
         cax = ax.matshow(matrix, cmap=cmap, aspect='equal', vmin=v_min, vmax=v_max)
 
         # Add a color bar
-        cbar = fig.colorbar(cax, orientation='vertical', shrink=0.69, pad=0.1)
-        cbar.ax.tick_params(labelsize=20, colors=label_color)
-        cbar.set_ticks(np.linspace(v_min, v_max, num=5))  # 5 evenly spaced ticks
-        cbar.set_ticklabels([f'{tick:.2f}' for tick in np.linspace(
-            v_min, v_max, num=5)])
+        cbar = fig.colorbar(cax, orientation='vertical', shrink=0.67, pad=0.1)
+        cbar.ax.tick_params(labelsize=30, colors="black")
         cbar.outline.set_visible(True)
-        cbar.outline.set_linewidth(1.5)
+        cbar.outline.set_linewidth(1.0)
+        cbar.set_label("Avg. num. contacts", fontsize=25,
+                       labelpad=10, color="black")
 
         # Set ticks and labels
         xtick_labels = self.get_tick_labels(
@@ -291,25 +391,20 @@ class Plotter:
         ax.set_xticks(np.arange(self.n_age))
         ax.set_yticks(np.arange(self.n_age))
         ax.set_xticklabels(xtick_labels, rotation=90, ha='center',
-                           fontsize=20, fontweight='bold', color=label_color)
-        ax.set_yticklabels(ytick_labels, fontsize=20, fontweight='bold',
-                           color=label_color)
+                           fontsize=20, color="black", usetex=False)
+        ax.set_yticklabels(ytick_labels, fontsize=20,
+                           color="black", usetex=False)
 
         # Ensure labels appear only on the bottom x-axis
         ax.xaxis.set_ticks_position('bottom')  # Position ticks at the bottom
         ax.xaxis.set_tick_params(labeltop=False)  # Disable top x-axis labels
-        ax.tick_params(axis='both', which='major', length=10, width=3,
-                       labelsize=20, color=label_color)
+        ax.tick_params(axis='both', which='major', length=10, width=2,
+                       labelsize=20, color="black")
 
         # Add a bold title
-        ax.set_title(plot_title, fontsize=25, fontweight='bold', color=label_color)
+        ax.set_title(plot_title, fontsize=40, color="black", usetex=False)
 
         ax.invert_yaxis()
-
-        # Remove unnecessary spines for a clean look
-        for spine in ax.spines.values():
-            spine.set_visible(False)
-
         # Save the figure
         os.makedirs(folder, exist_ok=True)
         save_path = os.path.join(folder, filename)
@@ -317,29 +412,23 @@ class Plotter:
         plt.close()
 
     def plot_cumulative_sensitivities(self, cum_sensitivities: torch.Tensor,
-                                     plot_title: str, filename: str, folder: str):
+                                      plot_title: str, filename: str, folder: str,
+                                      lower: torch.Tensor = None,
+                                      upper: torch.Tensor = None):
         """
-        Plot cumulative sensitivities for each age group as a bar
-         plot with color gradient,
-        horizontal and vertical grids.
+        Plot cumulative sensitivities with bars
+        """
 
-        Args:
-            cum_sensitivities (torch.Tensor): Tensor of cum_sensitivities for
-            each age group.
-            plot_title (str): Title of the plot.
-            filename (str): Name of the file to save the plot.
-            folder (str): Directory where the plot will be saved.
-        """
-        # Ensure folder exists
         os.makedirs(folder, exist_ok=True)
 
-        # Convert elasticities to numpy if it's a tensor
         if isinstance(cum_sensitivities, torch.Tensor):
             cum_sensitivities = cum_sensitivities.detach().cpu().numpy()
 
-        # Normalize sensitivities by dividing by the sum
         total_sensitivities = cum_sensitivities.sum()
-        normalized_sensitivities = cum_sensitivities / total_sensitivities  # Normalize to sum to 1
+        normalized_sensitivities = cum_sensitivities / total_sensitivities
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+        x_pos = np.arange(len(self.labels))
 
         # Set up colormap and normalize for coloring (using Reds instead of Greens)
         norm = plt.Normalize(vmin=normalized_sensitivities.min(),
@@ -349,30 +438,60 @@ class Plotter:
         # Assign colors based on normalized elasticities
         colors = [cmap(norm(value)) for value in normalized_sensitivities]
 
-        fig, ax = plt.subplots(figsize=(10, 6))
-        x_pos = np.arange(len(self.labels))
-
         ax.bar(x_pos, normalized_sensitivities, align='center', alpha=0.9,
                color=colors, edgecolor='black', zorder=3)
 
-        ax.tick_params(axis='y', which='both', left=False, right=False,
-                       labelsize=15, labelcolor='darkred')
-        ax.tick_params(axis='x', which='both', bottom=True, top=False,
-                       labelsize=15, width=2, length=8, color='darkred')
+        # color = '#5e2b91'
+        # bars = ax.bar(x_pos, normalized_sensitivities, align='center', alpha=0.95,
+        #               color=color, zorder=3, linewidth=0.8, width=0.85, edgecolor='white')
 
+        if lower is not None and upper is not None:
+            if isinstance(lower, torch.Tensor):
+                lower = lower.detach().cpu().numpy()
+            if isinstance(upper, torch.Tensor):
+                upper = upper.detach().cpu().numpy()
+
+            lower = lower / total_sensitivities
+            upper = upper / total_sensitivities
+
+            error = [normalized_sensitivities - lower,
+                     upper - normalized_sensitivities]
+
+            ax.errorbar(x_pos, normalized_sensitivities, yerr=error,
+                        fmt='none', ecolor='red', elinewidth=2.5, capsize=4,
+                        capthick=2, zorder=4)
+
+        ylabel_text = {
+            "rost": r"Cumulative sensitivities, $\mathcal{S}_j(\mathpzc{m}=\text{R})$",
+            "seir": r"Cumulative sensitivities, $\mathcal{S}_j(\mathpzc{m}=\text{P})$"
+        }.get(self.model, r"Cumulative sensitivities, "
+                          r"$\mathcal{S}_j(\mathpzc{m}=\text{I})$")
+
+        # Clean up axes
         for spine in ax.spines.values():
             spine.set_visible(False)
-
-        # ax.grid(axis='y', linestyle='--', linewidth=0.1, alpha=0.5, zorder=1)
-        # ax.grid(axis='x', linestyle='--', linewidth=0.1, alpha=0.5, zorder=1)
+        ax.plot([0, 0], [0, 1], transform=ax.transAxes, color='black',
+                linewidth=2, clip_on=False)
 
         ax.set_xticks(x_pos)
-        ax.set_xticklabels(self.labels, rotation=45, ha='center', fontsize=15,
-                           fontweight='bold', color='darkred')
+        ax.set_title(plot_title, fontsize=40, fontweight="bold",
+                     color='black', pad=20)
+        ax.set_xticklabels(self.labels, rotation=90, ha='center',
+                           fontsize=20, color='black', usetex=False)
 
-        ax.set_ylabel(r"Cumulative sensitivities $\tilde{s}_j$", fontsize=15,
-                      fontweight="bold", color='darkred')
-        ax.set_title(plot_title, fontsize=22, pad=20, fontweight="bold", color='darkred')
+        ax.tick_params(axis='y', which='both',
+                       right=False, left=True,
+                       labelright=False, labelleft=True,
+                       direction='out', length=20, width=3.0,
+                       labelsize=25)
+        ax.tick_params(axis='y', colors='black')
+        ax.tick_params(axis='x', which='both',
+                       top=False, bottom=True,
+                       labelbottom=True, length=8, width=2.5)
+
+        ax.set_ylabel("")
+        ax.grid(False)
+
         plt.tight_layout()
         save_path = os.path.join(folder, f"{filename}.pdf")
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
