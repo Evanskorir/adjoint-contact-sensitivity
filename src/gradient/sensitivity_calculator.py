@@ -6,14 +6,14 @@ from src.comp_graph.cm_elements_cg_leaf import CMElementsCGLeaf
 from src.gradient.eigen_value_gradient import EigenValueGradient
 from src.gradient.ngm_gradient import NGMGradient
 from src.static.cm.cm_leaf_preparator import CGLeafPreparator
-from src.static.eigen_calculator import EigenCalculator
 from src.static.contact_mtx_eigen import ContactMatrixEigenCalculator
+from src.static.eigen_calculator import EigenCalculator
 from src.static.outcome_transition_params import OutcomeTransitionParameters
 
 
 class SensitivityCalculator:
     def __init__(self, data, model: str, target: str = "deaths",
-                 use_ngm_elasticity: bool = False, use_cm_elasticity: bool = False):
+                 use_cm_elasticity: bool = False):
         self.data = data
         self.model = model
         self.params = self.data.model_parameters_data
@@ -21,8 +21,7 @@ class SensitivityCalculator:
         self.n_age = len(self.population)
         self.target = target
 
-        # scaling options
-        self.use_ngm_elasticity = use_ngm_elasticity
+        # scaling option
         self.use_cm_elasticity = use_cm_elasticity
 
         # Initialize placeholders for calculated values
@@ -169,15 +168,10 @@ class SensitivityCalculator:
         # Compute derivative of r0 w.r.t contact input
         r0_cm_grad = self.eigen_value_gradient.r0_cm_grad
 
-        # introduce scaling using contact matrix and NGM R0
-        elasticity_ngm = (self.contact_input / self.eigen_value) * r0_cm_grad
-
         # introduce scaling using Contact matrix and CM R0
         elasticity_cm = (self.contact_input / self.cm_dom_eigenvalue) * r0_cm_grad
 
-        if self.use_ngm_elasticity:
-            self.r0_cm_grad = elasticity_ngm
-        elif self.use_cm_elasticity:
+        if self.use_cm_elasticity:
             self.r0_cm_grad = elasticity_cm
         else:
             self.r0_cm_grad = r0_cm_grad
@@ -200,7 +194,6 @@ class SensitivityCalculator:
             "kenya_agg": [2.5],
             "rost": [1.8],
             "rost_agg": [1.8],
-            "washington": [5.7],
             "seir": [1.8],
             "seir_agg": [1.8]
         }

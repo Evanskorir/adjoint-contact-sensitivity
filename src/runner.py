@@ -8,7 +8,7 @@ from src.static.dataloader import DataLoader
 
 class Runner:
     def __init__(self, data: DataLoader, model: str, target: str,
-                 use_ngm_elasticity: bool = False, use_cm_elasticity: bool = False):
+                 use_cm_elasticity: bool = False):
         """
         Initialize the simulation with the provided data.
         Args: data (DataLoader): DataLoader object containing age data and model params.
@@ -20,7 +20,6 @@ class Runner:
         self.labels = self.data.labels
 
         self.target = target
-        self.use_ngm_elasticity = use_ngm_elasticity
         self.use_cm_elasticity = use_cm_elasticity
 
         # Dynamically set susceptibility choices
@@ -34,7 +33,6 @@ class Runner:
 
         self.sensitivity_calc = SensitivityCalculator(
             data=self.data, model=self.model, target=self.target,
-            use_ngm_elasticity=use_ngm_elasticity,
             use_cm_elasticity=self.use_cm_elasticity
         )
         self.r0_cm_grad = None
@@ -126,7 +124,6 @@ class Runner:
         plot.plot_r0_small_ngm_grad_mtx(
             matrix=self.sensitivity_calc.symmetric_contact_matrix,
             filename="CM.pdf",
-            plot_title="Full contact",
             folder=cm_folder,
             cmap_type="CM",
             label_color="darkblue"
@@ -147,9 +144,10 @@ class Runner:
             )
 
         # Plot R0 gradient matrix
+        title = f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$"
         plot.plot_grads(
             grads=self.r0_cm_grad,
-            plot_title=f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$",
+            plot_title=title,
             filename="Grads_tri.pdf",
             folder=scale_folder
         )
@@ -157,7 +155,7 @@ class Runner:
         # Plot cumulative sensitivities
         plot.plot_cumulative_sensitivities(
             cum_sensitivities=self.sensitivity_calc.cum_sens,
-            plot_title=f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$",
+            plot_title=title,
             filename=f"cum_sens",
             folder=scale_folder
         )

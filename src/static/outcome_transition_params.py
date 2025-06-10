@@ -13,13 +13,11 @@ class OutcomeTransitionParameters:
             self.mu = params["mu"]  # Death prob given ICU
 
         elif model in ["kenya", "kenya_agg"]:
-            self.q = params["q"]
+            self.theta = params["theta"]
             self.kappa = params["kappa"]
             self.gamma_m = params["gamma_m"]
-            self.phi = params["phi"]
+            self.zeta = params["zeta"]
             self.gamma_h = params["gamma_h"]
-            self.delta = params["delta_c"]
-            self.xi = params["xi"]
 
         else:
             pass
@@ -30,7 +28,8 @@ class OutcomeTransitionParameters:
         if self.model in ["rost", "rost_agg"]:
             p_symptomatic = 1.0 - self.p
             if outcome == "hospitalized":
-                return ngm_small_tensor * (p_symptomatic * self.h).view(-1, 1)
+                return ngm_small_tensor * (p_symptomatic * self.h *
+                                           (1.0 * self.xi)).view(-1, 1)
             elif outcome == "icu":
                 return ngm_small_tensor * (p_symptomatic * self.h * self.xi).view(-1, 1)
             elif outcome == "death":
@@ -38,16 +37,12 @@ class OutcomeTransitionParameters:
                                            self.xi * self.mu).view(-1, 1)
         elif self.model in ["kenya", "kenya_agg"]:
             # Calculate probabilities from transitions
-            p_hosp = (1.0 - self.q) * (self.kappa / (self.kappa + self.gamma_m))
-            p_icu = p_hosp * (self.phi / (self.phi + self.gamma_h))
-            p_death = p_icu * (self.delta / (self.delta + self.xi))
-
+            p_hosp = (1.0 - self.theta) * (self.kappa / (self.kappa + self.gamma_m))
+            p_icu = p_hosp * (self.zeta / (self.zeta + self.gamma_h))
             if outcome == "hospitalized":
                 return ngm_small_tensor * p_hosp.view(-1, 1)
             elif outcome == "icu":
                 return ngm_small_tensor * p_icu.view(-1, 1)
-            elif outcome == "death":
-                return ngm_small_tensor * p_death.view(-1, 1)
 
         else:
             raise ValueError(f"Unsupported outcome target: {outcome}")

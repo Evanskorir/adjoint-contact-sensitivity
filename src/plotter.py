@@ -5,9 +5,12 @@ import os
 import pandas as pd
 import seaborn as sns
 import torch
+import matplotlib.patheffects as pe
 
 from matplotlib.ticker import MaxNLocator, FormatStrFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.ticker import LogLocator, LogFormatterSciNotation
+from matplotlib.ticker import LogFormatter
 from matplotlib import cm
 from matplotlib.colors import LogNorm
 from matplotlib.colors import LinearSegmentedColormap
@@ -242,35 +245,61 @@ class Plotter:
         Method to plot a heatmap
         and enhanced annotations.
         """
+
         # Create a mask for the lower triangular part (excluding the diagonal)
         mask = np.tril(np.ones_like(data, dtype=bool), k=-1)
         data_masked = np.ma.masked_array(data, mask=mask)
         fig, ax = plt.subplots(figsize=(8, 8))
 
-        # Plot the data with the reversed colormap
-        cax = ax.imshow(data_masked, cmap=self.reversed_greens_cmap, aspect='auto',
-                        vmin=float(np.nanmin(data)),
-                        vmax=float(np.nanmax(data)))
+        # Avoid log(0) or negative values by masking them (LogNorm requires > 0)
+        safe_data = np.where(data_masked <= 0, np.nan, data_masked)
 
-        # Custom colorbar axis position
+        # Determine log scale range (ignoring NaNs)
+        log_vmin = np.nanmin(safe_data)
+        log_vmax = np.nanmax(safe_data)
+
+        # Plot using logarithmic normalization
+        cax = ax.imshow(safe_data, cmap=self.reversed_greens_cmap, aspect='auto',
+                        norm=LogNorm(vmin=log_vmin, vmax=log_vmax))
+
+        # Set log ticks: nicely spaced, clean limits
+        log_ticks = np.logspace(np.floor(np.log10(log_vmin)),
+                                np.ceil(np.log10(log_vmax)),
+                                num=5)
+
+        # Create colorbar axis with generous height
         cbar_ax = fig.add_axes((1.05, 0.2, 0.05, 0.6))
-        cbar = fig.colorbar(cax, cax=cbar_ax)
 
-        # Reduce tick clutter
-        cbar.locator = MaxNLocator(nbins=4)
-        cbar.update_ticks()
-        cbar.ax.yaxis.set_major_formatter(FormatStrFormatter("%.2f"))
+        # Create colorbar with custom ticks
+        cbar = fig.colorbar(
+            cax,
+            cax=cbar_ax,
+            ticks=log_ticks,
+            format=LogFormatter(labelOnlyBase=False)  # Show full tick labels
+        )
 
-        # Style
-        cbar.ax.tick_params(labelsize=20, colors="darkgreen")
+        # Optional: math-style tick labels for elegance
+        tick_labels = [rf"$10^{{{int(np.log10(t))}}}$" for t in log_ticks]
+        cbar.set_ticklabels(tick_labels)
+
+        # Style ticks and outline
+        cbar.ax.tick_params(
+            labelsize=30,
+            width=2.5,
+            length=10,
+            direction='out',
+            color='black'
+        )
         cbar.outline.set_visible(True)
-        cbar.outline.set_linewidth(0.8)
-        cbar.outline.set_edgecolor("darkgreen")
+        cbar.outline.set_edgecolor("black")
+        cbar.outline.set_linewidth(0.5)
 
-        # Additional colorbar aesthetics
+        # Add stroke effect to tick labels (glow for clarity)
         for tick in cbar.ax.get_yticklabels():
-            tick.set_fontsize(30)
+            tick.set_fontweight('bold')
             tick.set_color("black")
+            tick.set_path_effects([pe.withStroke(linewidth=0.7,
+                                                 foreground='white')])
 
         # Remove spines for a clean look
         for spine in ax.spines.values():
@@ -309,6 +338,10 @@ class Plotter:
         # Invert y-axis to keep the original matrix orientation
         ax.invert_yaxis()
 
+        # Correct coordinates considering inverted y-axis
+        ax.axhline(y=-0.5, color='black', linewidth=5)  # visual bottom border
+        ax.axvline(x=self.n_age - 0.5, color='black', linewidth=5)  # right border
+
         plt.subplots_adjust(right=0.85)
         plt.tight_layout()
         os.makedirs(folder, exist_ok=True)
@@ -336,76 +369,74 @@ class Plotter:
         self.plot_heatmap(grads_full, plot_title, filename, folder,
                           annotate=False)
 
-    def plot_r0_small_ngm_grad_mtx(self, matrix: torch.Tensor, plot_title: str,
-                    filename: str, folder: str, cmap_type: str,
+    def plot_r0_small_ngm_grad_mtx(self, matrix: torch.Tensor,
+                                   filename: str, folder: str, cmap_type: str,
                                    label_color: str):
         """
-        General function to plot a matrix as a heatmap with customizable colormap.
-        Args:
-            matrix (torch.Tensor): The matrix to be plotted.
-            plot_title (str): The title of the plot.
-            filename (str): The name of the file to save the plot.
-            folder (str): The directory where the plot will be saved.
-            cmap_type (str): Specify the colormap type ("CM" for Contact Matrix
-            or "NGM" for NGM).
-            label_color: Color of the text and labels.
+        Plot a matrix as a heatmap with linear-scaled color and consistent ticks/labels.
         """
-        # Define min and max values for the color scale
         matrix = matrix.detach().numpy()
 
-        v_min = matrix.min()
-        v_max = matrix.max()
+        # Handle invalid or non-positive values
+        matrix[matrix < 0] = 0  # Optional: treat negatives as zero
+        v_min = np.nanmin(matrix)
+        v_max = np.nanmax(matrix)
 
         fig, ax = plt.subplots(figsize=(8, 8), constrained_layout=True)
 
-        # Define colormaps based on cmap_type
+        # Select colormap
         if cmap_type == "CM":
-            cmap = self.reversed_blues_cmap   # Blues
-            # cmap = "jet"
-
+            cmap = self.reversed_blues_cmap
         elif cmap_type == "NGM":
-            # Define a yellow colormap for Next Generation Matrix
             cmap = LinearSegmentedColormap.from_list(
                 "YellowRedGradient", ["#FFFFE0", "#FFD700", "#FF0000"]
             )
         else:
-            raise ValueError("Invalid cmap_type. Use 'CM' for Contact Matrix or "
-                             "'NGM' for Next Generation Matrix.")
+            raise ValueError("Invalid cmap_type. Use 'CM' or 'NGM'.")
 
-        # Create a heatmap
-        cax = ax.matshow(matrix, cmap=cmap, aspect='equal', vmin=v_min, vmax=v_max)
+        # Plot with linear-scaled colors
+        cax = ax.matshow(matrix, cmap=cmap, vmin=v_min, vmax=v_max, aspect='equal')
 
-        # Add a color bar
-        cbar = fig.colorbar(cax, orientation='vertical', shrink=0.67, pad=0.1)
-        cbar.ax.tick_params(labelsize=30, colors="black")
+        # Color bar
+        cbar = fig.colorbar(cax, orientation='vertical', shrink=0.63, pad=0.1)
+        cbar.ax.tick_params(labelsize=25, colors="black", width=2, length=8)
         cbar.outline.set_visible(True)
         cbar.outline.set_linewidth(1.0)
-        cbar.set_label("Avg. num. contacts", fontsize=25,
-                       labelpad=10, color="black")
+        cbar.set_label("Avg. num. contacts", fontsize=22, labelpad=10, color="black",
+                       fontweight='normal')
 
-        # Set ticks and labels
+        # Axis labels
         xtick_labels = self.get_tick_labels(
-            self.labels, alternate=self.model in ["rost", "seir"])
+            self.labels, alternate=self.model in ["rostr", "seirr"])
         ytick_labels = self.get_tick_labels(
-            self.labels, alternate=self.model in ["rost", "seir"])
+            self.labels, alternate=self.model in ["rostr", "seirr"])
+
         ax.set_xticks(np.arange(self.n_age))
         ax.set_yticks(np.arange(self.n_age))
-        ax.set_xticklabels(xtick_labels, rotation=90, ha='center',
-                           fontsize=20, color="black", usetex=False)
-        ax.set_yticklabels(ytick_labels, fontsize=20,
-                           color="black", usetex=False)
 
-        # Ensure labels appear only on the bottom x-axis
-        ax.xaxis.set_ticks_position('bottom')  # Position ticks at the bottom
-        ax.xaxis.set_tick_params(labeltop=False)  # Disable top x-axis labels
+        ax.set_xticklabels(xtick_labels, rotation=90, ha='center',
+                           fontsize=20, fontweight='normal')
+        ax.set_yticklabels(ytick_labels, fontsize=20, fontweight='normal')
+
+        ax.xaxis.set_ticks_position('bottom')
+        ax.xaxis.set_tick_params(labeltop=False)
         ax.tick_params(axis='both', which='major', length=10, width=2,
                        labelsize=20, color="black")
 
-        # Add a bold title
-        ax.set_title(plot_title, fontsize=40, color="black", usetex=False)
-
         ax.invert_yaxis()
-        # Save the figure
+        plot_title = "Full contact"
+
+        ax.set_title(plot_title, fontsize=40, fontweight='bold', color="black")
+
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(True)
+        ax.spines["left"].set_linewidth(1.5)
+        ax.spines["left"].set_color("black")
+        ax.spines["bottom"].set_visible(True)
+        ax.spines["bottom"].set_linewidth(1.5)
+        ax.spines["bottom"].set_color("black")
+
         os.makedirs(folder, exist_ok=True)
         save_path = os.path.join(folder, filename)
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
