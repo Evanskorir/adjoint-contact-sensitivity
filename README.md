@@ -42,21 +42,6 @@ src
  │   │   ├── model 
  │   │   ├── ngm_calculator  
  │   │   └── v_matrix_calculator
- │   ├── chikina 
- │   │   ├── model
- │   │   ├── ngm_calculator  
- │   │   └── v_matrix_calculator
- │   ├── italy   
- │   │   ├── ngm_calculator  
- │   │   └── v_matrix_calculator
- │   ├── kenya 
- │   │   ├── model
- │   │   ├── ngm_calculator  
- │   │   └── v_matrix_calculator
- │   ├── moghadas
- │   │   ├── model
- │   │   ├── ngm_calculator  
- │   │   └── v_matrix_calculator
  │   ├── rost
  │   │   ├── model
  │   │   ├── ngm_calculator  
@@ -68,7 +53,6 @@ src
  ├── static 
  │   ├── cm
  │   │   ├── cm_data
- │   │   ├── cm_data_aggregate_kenya
  │   │   └── cm_leaf_preparatory 
  │   ├── model
  │   │   ├── e_matrix_calculator
@@ -104,7 +88,6 @@ contact matrix, and computes both the eigenvalue and gradient.
 
 #### `src/static/`
 - **`cm/cm_data.py`**: Loads and calculates the sum of contact matrices in different settings from the `dataloader.py`.
-- **`cm/cm_data_aggregate_kenya.py`**: Loads the data corresponding to kenya model and aggregates it into 4 age groups
 - **`cm/cm_leaf_preparatory.py`**: Transforms the given full contact matrix obtained from the `cm_data.py`.
 - **`model/e_matrix_calculator.py`**: Designed to create a block diagonal matrix with specific properties.
 - **`model/ngm_calculator_base.py`**: Base class for computing the NGM with small domain for each model.
