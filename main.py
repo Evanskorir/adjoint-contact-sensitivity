@@ -3,7 +3,7 @@ from src.static.dataloader import DataLoader
 
 
 def main():
-    model = "rost"
+    model = "rost_agg"
     target = "death"  # "r0", "hospitalized", "icu", "death"
     use_cm_elasticity = False
 

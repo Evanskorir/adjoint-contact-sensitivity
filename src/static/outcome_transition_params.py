@@ -11,14 +11,6 @@ class OutcomeTransitionParameters:
             self.h = params["h"]  # Hospitalization prob
             self.xi = params["xi"]  # ICU prob given hosp
             self.mu = params["mu"]  # Death prob given ICU
-
-        elif model in ["kenya", "kenya_agg"]:
-            self.theta = params["theta"]
-            self.kappa = params["kappa"]
-            self.gamma_m = params["gamma_m"]
-            self.zeta = params["zeta"]
-            self.gamma_h = params["gamma_h"]
-
         else:
             pass
 
@@ -35,15 +27,6 @@ class OutcomeTransitionParameters:
             elif outcome == "death":
                 return ngm_small_tensor * (p_symptomatic * self.h *
                                            self.xi * self.mu).view(-1, 1)
-        elif self.model in ["kenya", "kenya_agg"]:
-            # Calculate probabilities from transitions
-            p_hosp = (1.0 - self.theta) * (self.kappa / (self.kappa + self.gamma_m))
-            p_icu = p_hosp * (self.zeta / (self.zeta + self.gamma_h))
-            if outcome == "hospitalized":
-                return ngm_small_tensor * p_hosp.view(-1, 1)
-            elif outcome == "icu":
-                return ngm_small_tensor * p_icu.view(-1, 1)
 
         else:
             raise ValueError(f"Unsupported outcome target: {outcome}")
-

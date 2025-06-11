@@ -129,20 +129,6 @@ class Runner:
             label_color="darkblue"
         )
 
-        # Plot non-aggregated age group distributions
-        if self.model in ["kenya", "rost"]:
-            age_dist_folder = os.path.join(model_folder, "AgeDist")
-            os.makedirs(age_dist_folder, exist_ok=True)
-
-            kenya_data = DataLoader(model="kenya")
-            hungary_data = DataLoader(model="rost")
-
-            plot.plot_side_by_side_age_distribution(
-                kenya_pop=kenya_data.age_data,
-                hungary_pop=hungary_data.age_data,
-                output_path=os.path.join(age_dist_folder, "kenya_vs_hungary_pop.pdf")
-            )
-
         # Plot R0 gradient matrix
         title = f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$"
         plot.plot_grads(

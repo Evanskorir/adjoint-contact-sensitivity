@@ -190,8 +190,6 @@ class SensitivityCalculator:
         """
         r0_mapping = {
             "british_columbia": [1.2],
-            "kenya": [2.5],
-            "kenya_agg": [2.5],
             "rost": [1.8],
             "rost_agg": [1.8],
             "seir": [1.8],

@@ -7,9 +7,7 @@ import seaborn as sns
 import torch
 import matplotlib.patheffects as pe
 
-from matplotlib.ticker import MaxNLocator, FormatStrFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.ticker import LogLocator, LogFormatterSciNotation
 from matplotlib.ticker import LogFormatter
 from matplotlib import cm
 from matplotlib.colors import LogNorm
@@ -118,6 +116,17 @@ class Plotter:
         for spine in ax.spines.values():
             spine.set_visible(False)
 
+    @staticmethod
+    def set_up_borders(ax):
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(True)
+        ax.spines["left"].set_linewidth(1.5)
+        ax.spines["left"].set_color("black")
+        ax.spines["bottom"].set_visible(True)
+        ax.spines["bottom"].set_linewidth(1.5)
+        ax.spines["bottom"].set_color("black")
+
     def plot_matrix(self, matrix, title, v_min, v_max, output_path,
                     mask=None, annotate=False, show_cbar=False, norm=None):
         """Plot a contact matrix with a shared log scale and optional colorbar."""
@@ -150,15 +159,7 @@ class Plotter:
                            labelpad=10, color="black")
 
         self.style_axes(ax)
-
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(True)
-        ax.spines["left"].set_linewidth(1.5)
-        ax.spines["left"].set_color("black")
-        ax.spines["bottom"].set_visible(True)
-        ax.spines["bottom"].set_linewidth(1.5)
-        ax.spines["bottom"].set_color("black")
+        self.set_up_borders(ax)
 
         ax.set_title(title, fontsize=25, color='black')
 
@@ -192,52 +193,6 @@ class Plotter:
                 show_cbar=(contact_type == "Full"),
                 norm=norm
             )
-
-    def plot_side_by_side_age_distribution(self, kenya_pop: torch.Tensor,
-                                           hungary_pop: torch.Tensor,
-                                           output_path: str):
-
-        mpl.rcParams.update({
-            "axes.spines.top": False,
-            "axes.spines.right": False,
-            "axes.spines.bottom": False,
-            "axes.spines.left": True,
-            "axes.edgecolor": "black",
-            "axes.linewidth": 0.8,
-            "font.size": 15
-        })
-
-        kenya_pop = kenya_pop.detach().cpu().numpy()
-        hungary_pop = hungary_pop.detach().cpu().numpy()
-
-        age_labels = self.labels
-        n = len(age_labels)
-        x = np.arange(n)
-
-        bar_width = 0.2
-        spacing = bar_width
-
-        fig, ax = plt.subplots(figsize=(9, 4))
-
-        ax.bar(x - spacing / 2, kenya_pop, width=bar_width,
-               color='cyan', edgecolor='black', linewidth=0.4, label="Kenya")
-        ax.bar(x + spacing / 2, hungary_pop, width=bar_width,
-               color='orange', edgecolor='black', linewidth=0.4, label="Hungary")
-
-        ax.set_ylabel("Population", fontsize=20, fontweight='bold')
-        ax.tick_params(axis='y', which='both', length=5, width=1.0,
-                       direction='out', labelsize=15)
-
-        ax.set_xticklabels(age_labels, rotation=45, ha='center', fontsize=15)
-        ax.tick_params(axis='x', which='both', length=0)
-        ax.set_xticks(x)
-
-        ax.legend(loc="upper right", fontsize=15)
-
-        plt.tight_layout()
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        plt.savefig(output_path, format="pdf", dpi=400, bbox_inches='tight')
-        plt.close()
 
     def plot_heatmap(self, data: np.ndarray, plot_title: str, filename: str,
                      folder: str, annotate: bool = True):
@@ -427,15 +382,7 @@ class Plotter:
         plot_title = "Full contact"
 
         ax.set_title(plot_title, fontsize=40, fontweight='bold', color="black")
-
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(True)
-        ax.spines["left"].set_linewidth(1.5)
-        ax.spines["left"].set_color("black")
-        ax.spines["bottom"].set_visible(True)
-        ax.spines["bottom"].set_linewidth(1.5)
-        ax.spines["bottom"].set_color("black")
+        self.set_up_borders(ax)
 
         os.makedirs(folder, exist_ok=True)
         save_path = os.path.join(folder, filename)
@@ -449,7 +396,6 @@ class Plotter:
         """
         Plot cumulative sensitivities with bars
         """
-
         os.makedirs(folder, exist_ok=True)
 
         if isinstance(cum_sensitivities, torch.Tensor):
