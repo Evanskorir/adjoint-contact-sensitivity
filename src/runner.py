@@ -96,8 +96,10 @@ class Runner:
         beta = base_r0 / self.sensitivity_calc.eigen_value
         self.sensitivity_calc.params.update({"beta": beta})
 
-        # Scale the eigenvalue gradient by beta to get r0_cm_grad
-        self.r0_cm_grad = beta * self.sensitivity_calc.r0_cm_grad
+        if self.use_cm_elasticity:
+            self.r0_cm_grad = beta * self.sensitivity_calc.r0_cm_grad
+        else:
+            self.r0_cm_grad = self.sensitivity_calc.r0_cm_grad
 
     def generate_plots(self, scale_folder: str, base_r0: float):
         """
@@ -131,6 +133,9 @@ class Runner:
 
         # Plot R0 gradient matrix
         title = f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$"
+
+        # title = f"$\\overline{{\\mathcal{{R}}}}_0("f"\\mathpzc{{m}}=\\text{{R}})"f"={base_r0}$"
+
         plot.plot_grads(
             grads=self.r0_cm_grad,
             plot_title=title,

@@ -29,7 +29,6 @@ class SensitivityCalculator:
         self.ngm_small_tensor = None
         self.ngm_small_grads = None
         self.eigen_value_gradient = None
-
         self.r0_cm_grad = None
         self.cum_sens = None
 
@@ -160,7 +159,9 @@ class SensitivityCalculator:
             n_age=self.n_age,
             ngm_small_grads=self.ngm_small_grads,
             left_eigen_vec=self.left_eig_vector,
-            right_eigen_vec=self.right_eig_vector
+            right_eigen_vec=self.right_eig_vector,
+            dominant_eigen_val=self.eigen_value,
+            ngm_small_tensor=self.ngm_small_tensor
         )
         eigen_value_grad.run()
         self.eigen_value_gradient = eigen_value_grad
