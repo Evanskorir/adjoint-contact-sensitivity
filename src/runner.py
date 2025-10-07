@@ -125,21 +125,20 @@ class Runner:
         os.makedirs(cm_folder, exist_ok=True)
         plot.plot_r0_small_ngm_grad_mtx(
             matrix=self.sensitivity_calc.symmetric_contact_matrix,
-            filename="CM.pdf",
+            filename="CM.png",
             folder=cm_folder,
             cmap_type="CM",
-            label_color="darkblue"
+            label_color="darkblue",
+            plot_title="Full contact"
         )
 
         # Plot R0 gradient matrix
         title = f"$\\overline{{\\mathcal{{R}}}}_0={base_r0}$"
 
-        # title = f"$\\overline{{\\mathcal{{R}}}}_0("f"\\mathpzc{{m}}=\\text{{R}})"f"={base_r0}$"
-
         plot.plot_grads(
             grads=self.r0_cm_grad,
             plot_title=title,
-            filename="Grads_tri.pdf",
+            filename="Grads_tri.png",
             folder=scale_folder
         )
 

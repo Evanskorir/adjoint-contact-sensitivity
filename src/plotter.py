@@ -10,8 +10,8 @@ import matplotlib.patheffects as pe
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import LogFormatter
 from matplotlib import cm
-from matplotlib.colors import LogNorm
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LogNorm, LinearSegmentedColormap
+
 import matplotlib as mpl
 mpl.rcParams['text.usetex'] = True
 mpl.rcParams['font.family'] = 'serif'
@@ -56,7 +56,7 @@ class Plotter:
 
     @staticmethod
     def save_figure(ax, output_path):
-        plt.savefig(output_path, format="pdf", bbox_inches='tight')
+        plt.savefig(output_path, format="png", bbox_inches='tight')
         plt.close()
 
     @staticmethod
@@ -76,19 +76,19 @@ class Plotter:
             alternate = self.model == "rost"
             xtick_labels = self.get_tick_labels(self.labels, alternate)
             y_tick_labels = self.get_tick_labels(self.labels, alternate)
-            ax.set_xticklabels(xtick_labels, fontsize=20,
+            ax.set_xticklabels(xtick_labels, fontsize=30,
                                rotation=90, ha='center', color='black')
-            ax.set_yticklabels(y_tick_labels, fontsize=20,
+            ax.set_yticklabels(y_tick_labels, fontsize=30,
                                rotation=0, va='center', color='black')
         else:
-            ax.set_xticklabels(self.labels, fontsize=20,
+            ax.set_xticklabels(self.labels, fontsize=30,
                                rotation=45, ha='center', color='black')
-            ax.set_yticklabels(self.labels, fontsize=20,
+            ax.set_yticklabels(self.labels, fontsize=30,
                                ha='center', color='black')
 
         # Adjust tick mark size and appearance
         ax.tick_params(axis='both', which='major', length=10, width=3,
-                       labelsize=20, color='black')
+                       labelsize=30, color='black')
         # Invert y-axis for better orientation
         ax.invert_yaxis()
 
@@ -102,13 +102,13 @@ class Plotter:
 
         # Customize axes based on label_axes flag
         if label_axes:
-            ax.set_xlabel("Age Infected", fontsize=18, labelpad=15, color='black')
-            ax.set_ylabel("Age Susceptible", fontsize=18, labelpad=15, color='black')
+            ax.set_xlabel("Age Infected", fontsize=30, labelpad=15, color='black')
+            ax.set_ylabel("Age Susceptible", fontsize=30, labelpad=15, color='black')
 
         else:
             ax.set_xticklabels(self.labels, rotation=45, ha='center',
-                               fontsize=15, color='black')
-            ax.set_yticklabels(self.labels, fontsize=15,
+                               fontsize=30, color='black')
+            ax.set_yticklabels(self.labels, fontsize=30,
                                color='black')
         ax.invert_yaxis()
 
@@ -152,16 +152,16 @@ class Plotter:
             sm = cm.ScalarMappable(norm=norm, cmap=self.reversed_blues_cmap)
             sm.set_array([])
             cbar = fig.colorbar(sm, cax=cax)
-            cbar.ax.tick_params(labelsize=30, width=2, length=8)
+            cbar.ax.tick_params(labelsize=35, width=2, length=8)
             cbar.ax.yaxis.set_label_position('right')
             cbar.ax.yaxis.set_ticks_position('right')
-            cbar.set_label("Avg. num. contacts", fontsize=25,
+            cbar.set_label("Avg. num. contacts", fontsize=35,
                            labelpad=10, color="black")
 
         self.style_axes(ax)
         self.set_up_borders(ax)
 
-        ax.set_title(title, fontsize=25, color='black')
+        ax.set_title(title, fontsize=50, color='black')
 
         plt.tight_layout()
         self.save_figure(ax, output_path)
@@ -181,9 +181,10 @@ class Plotter:
         all_values = np.concatenate([mat.flatten() for mat in contact_data.values()])
         v_min = np.nanmin(all_values[all_values > 0])
         v_max = np.nanmax(all_values)
+        v_max = 10
         norm = LogNorm(vmin=max(v_min, 1e-3), vmax=v_max)
         for contact_type, matrix in contact_data.items():
-            output_path = os.path.join(output_dir, f"{filename}_{contact_type}.pdf")
+            output_path = os.path.join(output_dir, f"{filename}_{contact_type}.png")
             self.plot_matrix(
                 pd.DataFrame(matrix),
                 title=f"{contact_type} contact",
@@ -220,9 +221,8 @@ class Plotter:
         # Set log ticks: nicely spaced, clean limits
         log_ticks = np.logspace(np.floor(np.log10(log_vmin)),
                                 np.ceil(np.log10(log_vmax)),
-                                num=5)
+                                num=6)
 
-        # Create colorbar axis with generous height
         cbar_ax = fig.add_axes((1.05, 0.2, 0.05, 0.6))
 
         # Create colorbar with custom ticks
@@ -301,7 +301,7 @@ class Plotter:
         plt.tight_layout()
         os.makedirs(folder, exist_ok=True)
         save_path = os.path.join(folder, filename)
-        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        plt.savefig(save_path, format='png', bbox_inches='tight')
         plt.close()
 
     def plot_grads(self, grads: torch.Tensor, plot_title: str,
@@ -324,22 +324,18 @@ class Plotter:
         self.plot_heatmap(grads_full, plot_title, filename, folder,
                           annotate=False)
 
-    def plot_r0_small_ngm_grad_mtx(self, matrix: torch.Tensor,
+    def plot_r0_small_ngm_grad_mtx(self, matrix: torch.Tensor, plot_title: str,
                                    filename: str, folder: str, cmap_type: str,
                                    label_color: str):
         """
-        Plot a matrix as a heatmap with linear-scaled color and consistent ticks/labels.
+        Plot a matrix as a heatmap with log-scaled color and consistent ticks/labels.
         """
         matrix = matrix.detach().numpy()
+        # Set log-scale normalization and fixed range
+        v_min = 0
+        v_max = 10
 
-        # Handle invalid or non-positive values
-        matrix[matrix < 0] = 0  # Optional: treat negatives as zero
-        v_min = np.nanmin(matrix)
-        v_max = np.nanmax(matrix)
-
-        fig, ax = plt.subplots(figsize=(8, 8), constrained_layout=True)
-
-        # Select colormap
+        # Choose colormap
         if cmap_type == "CM":
             cmap = self.reversed_blues_cmap
         elif cmap_type == "NGM":
@@ -349,18 +345,20 @@ class Plotter:
         else:
             raise ValueError("Invalid cmap_type. Use 'CM' or 'NGM'.")
 
-        # Plot with linear-scaled colors
-        cax = ax.matshow(matrix, cmap=cmap, vmin=v_min, vmax=v_max, aspect='equal')
+        fig, ax = plt.subplots(figsize=(8, 8), constrained_layout=True)
+        cax = ax.matshow(matrix, cmap=cmap, aspect='equal', vmin=v_min, vmax=v_max)
 
-        # Color bar
+        # Add colorbar
         cbar = fig.colorbar(cax, orientation='vertical', shrink=0.63, pad=0.1)
+        cbar.ax.tick_params(labelsize=20, colors=label_color)
+        cbar.set_ticks(np.linspace(v_min, v_max, num=5))  # 5 evenly spaced ticks
         cbar.ax.tick_params(labelsize=25, colors="black", width=2, length=8)
         cbar.outline.set_visible(True)
         cbar.outline.set_linewidth(1.0)
-        cbar.set_label("Avg. num. contacts", fontsize=22, labelpad=10, color="black",
-                       fontweight='normal')
+        cbar.set_label("Avg. num. contacts", fontsize=22, labelpad=10,
+                       color="black", fontweight='normal')
 
-        # Axis labels
+        # Axis ticks and labels
         xtick_labels = self.get_tick_labels(
             self.labels, alternate=self.model in ["rostr", "seirr"])
         ytick_labels = self.get_tick_labels(
@@ -379,14 +377,13 @@ class Plotter:
                        labelsize=20, color="black")
 
         ax.invert_yaxis()
-        plot_title = "Full contact"
-
         ax.set_title(plot_title, fontsize=40, fontweight='bold', color="black")
+
         self.set_up_borders(ax)
 
         os.makedirs(folder, exist_ok=True)
         save_path = os.path.join(folder, filename)
-        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        plt.savefig(save_path, format='png', bbox_inches='tight')
         plt.close()
 
     def plot_cumulative_sensitivities(self, cum_sensitivities: torch.Tensor,
@@ -394,7 +391,7 @@ class Plotter:
                                       lower: torch.Tensor = None,
                                       upper: torch.Tensor = None):
         """
-        Plot cumulative sensitivities with bars
+        Plot cumulative sensitivities with uniform purple bars
         """
         os.makedirs(folder, exist_ok=True)
 
@@ -404,10 +401,9 @@ class Plotter:
         total_sensitivities = cum_sensitivities.sum()
         normalized_sensitivities = cum_sensitivities / total_sensitivities
 
-        fig, ax = plt.subplots(figsize=(12, 6))
+        fig, ax = plt.subplots(figsize=(8, 6))
         x_pos = np.arange(len(self.labels))
 
-        # Set up colormap and normalize for coloring (using Reds instead of Greens)
         norm = plt.Normalize(vmin=normalized_sensitivities.min(),
                              vmax=normalized_sensitivities.max())
         cmap = plt.get_cmap("YlOrRd")
@@ -415,61 +411,53 @@ class Plotter:
         # Assign colors based on normalized elasticities
         colors = [cmap(norm(value)) for value in normalized_sensitivities]
 
-        ax.bar(x_pos, normalized_sensitivities, align='center', alpha=0.9,
-               color=colors, edgecolor='black', zorder=3)
+        ax.bar(x_pos, normalized_sensitivities, align='center', alpha=0.95,
+               color=colors, edgecolor='black', zorder=3, width=0.6)
 
-        # color = '#5e2b91'
-        # bars = ax.bar(x_pos, normalized_sensitivities, align='center', alpha=0.95,
-        #               color=color, zorder=3, linewidth=0.8, width=0.85, edgecolor='white')
-
-        if lower is not None and upper is not None:
-            if isinstance(lower, torch.Tensor):
-                lower = lower.detach().cpu().numpy()
-            if isinstance(upper, torch.Tensor):
-                upper = upper.detach().cpu().numpy()
-
-            lower = lower / total_sensitivities
-            upper = upper / total_sensitivities
-
-            error = [normalized_sensitivities - lower,
-                     upper - normalized_sensitivities]
-
-            ax.errorbar(x_pos, normalized_sensitivities, yerr=error,
-                        fmt='none', ecolor='red', elinewidth=2.5, capsize=4,
-                        capthick=2, zorder=4)
-
-        ylabel_text = {
-            "rost": r"Cumulative sensitivities, $\mathcal{S}_j(\mathpzc{m}=\text{R})$",
-            "seir": r"Cumulative sensitivities, $\mathcal{S}_j(\mathpzc{m}=\text{P})$"
-        }.get(self.model, r"Cumulative sensitivities, "
-                          r"$\mathcal{S}_j(\mathpzc{m}=\text{I})$")
-
-        # Clean up axes
+        # Remove all default spines
         for spine in ax.spines.values():
             spine.set_visible(False)
+
+        # Add custom vertical border on the left
         ax.plot([0, 0], [0, 1], transform=ax.transAxes, color='black',
                 linewidth=2, clip_on=False)
 
+        # Axis ticks
         ax.set_xticks(x_pos)
-        ax.set_title(plot_title, fontsize=40, fontweight="bold",
-                     color='black', pad=20)
         ax.set_xticklabels(self.labels, rotation=90, ha='center',
                            fontsize=20, color='black', usetex=False)
 
+        # Y-axis ticks on the right only, clean and aligned
         ax.tick_params(axis='y', which='both',
                        right=False, left=True,
                        labelright=False, labelleft=True,
-                       direction='out', length=20, width=3.0,
-                       labelsize=25)
+                       direction='out', length=8, width=2.5,
+                       labelsize=20)
         ax.tick_params(axis='y', colors='black')
+
+        # X-axis ticks on the bottom only
         ax.tick_params(axis='x', which='both',
                        top=False, bottom=True,
                        labelbottom=True, length=8, width=2.5)
 
+        # No y-axis label
         ax.set_ylabel("")
+
+        # No grid
         ax.grid(False)
 
+        # Title
+        ax.set_title(plot_title, fontsize=30, pad=20, fontweight="bold", color='black')
+
+        # Legend (top-left)
+        legend = ax.legend(loc='upper left', fontsize=30, frameon=False)
+        for text in legend.get_texts():
+            text.set_color('black')
+
+        # Save
         plt.tight_layout()
-        save_path = os.path.join(folder, f"{filename}.pdf")
-        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        save_path = os.path.join(folder, f"{filename}.png")
+        plt.savefig(save_path, format='png', bbox_inches='tight')
         plt.close()
+
+
